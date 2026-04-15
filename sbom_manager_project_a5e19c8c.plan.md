@@ -30,7 +30,7 @@ isProject: false
 
 - Deliver a **working UI** backed by Python services that displays SBOM-related component data in a **data table**.
 
-## Feature: data table columns`/home/dian/.cursor/plans/sbom_manager_project_a5e19c8c.plan.md`
+## Feature: data table columns
 
 Each row represents one component (or one view of a component) with at least these fields:
 

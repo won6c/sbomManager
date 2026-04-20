@@ -1,0 +1,22 @@
+# Security & Secrets
+.env
+secrets.json
+
+# Python Artifacts (Useless for source control)
+__pycache__/
+.pytest_cache/
+*.py[cod]
+.venv/
+venv/
+
+# OS / IDE Junk
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Tooling Local State
+.claude/
+.omc/
+crypt_logs.py
+*.enc

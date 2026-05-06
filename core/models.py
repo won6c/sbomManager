@@ -1,23 +1,20 @@
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import Optional, List
 
-@dataclass(frozen=True)
+@dataclass
 class Component:
     name: str
-    version: str
-    vendor: Optional[str] = None
-    path: Optional[str] = None
+    version: Optional[str] = None
     purl: Optional[str] = None
     cpe: Optional[str] = None
 
-@dataclass(frozen=True)
+@dataclass
 class Vulnerability:
     cve_id: str
     severity: str
     description: str
-    affected_versions: List[str]
 
-@dataclass(frozen=True)
+@dataclass
 class MappingResult:
     component: Component
     vulnerabilities: List[Vulnerability]

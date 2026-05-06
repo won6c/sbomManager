@@ -1,56 +1,51 @@
-# SBOM Manager - Orchestration & Harness Engineering
+# SBOM Manager - Exploit Surface Analyzer
 
 ## Vision
-A pluggable Python-based orchestration framework for SBOM ingestion and CVE mapping, providing a high-density, filterable dashboard. The system focuses on risk-aware asset management, tracking software components across different categories (Packages, Binaries, Daemons, 3rd Party) and their associated system-level risks (Paths, Permissions/setuid, and User-defined remediation status).
+A security-oriented orchestration framework that transforms passive SBOM collection into active attack surface analysis. The system correlates kernel state, binary mitigations, package vulnerabilities, and daemon exposure to identify real, reachable attack paths.
 
 ## Architecture
 ```mermaid
 graph TD
-    User((User)) --> Web[web/ Frontend - React/Vue]
-    Web --> API[api/ Backend - FastAPI]
-    API --> Core[core/ Orchestration Engine]
+    User((User)) --> Web[Frontend]
+    Web --> API[API]
+    API --> Core[Correlation Engine]
     
-    subgraph "Orchestration Engine"
-        Core --> PM[PluginManager]
-        Core --> PL[Pipeline Orchestrator]
-        PM --> Plugins[plugins/ Parsers & Providers]
-        PL --> Plugins
+    subgraph "System Probes (Plugins)"
+        Core --> Kernel[Kernel Probe]
+        Core --> Binaries[Binary Probe - Path Limited]
+        Core --> Packages[Package Probe]
+        Core --> Daemons[Daemon Probe]
+        Core --> ThirdParty[3rd Party Probe]
     end
 
-    subgraph "Plugins Layer"
-        Plugins --> SP[SBOM Parsers]
-        Plugins --> CP[CVE Providers]
-        CP --> ExternalAPI((External CVE APIs))
+    subgraph "Intelligence Layer"
+        Core --> Graph[Relation Graph]
+        Graph --> Risk[Risk Scoring Engine]
+        Risk --> Insights[Attack Path Insights]
     end
 
-    Core --> Data[data/ Persistence Layer]
-    Data --> DB[(SQLite/Postgres)]
-    Core --> Tests[tests/ Validation]
-    
-    subgraph "Core Logic"
-        Core
-        Plugins
-        Data
-    end
+    Core --> Data[Persistence]
 ```
-- `core/`: Orchestration engine, plugin manager, and pipeline.
-- `plugins/`: Pluggable SBOM parsers and CVE providers.
-- `api/`: FastAPI backend.
-- `web/`: React/Vue frontend (Elastic UI style).
-- `data/`: Data persistence and schema.
-- `tests/`: Integration and unit tests.
+
+## Core Principles
+- **Correlation over Collection**: Assets are nodes in a graph, not entries in a list.
+- **Exploitability Focus**: Focus on mitigations (PIE, NX) and reachability, not just CVE existence.
+- **User-Defined Scope**: Binary scanning is limited to user-specified paths to prevent system lag.
+- **Graceful Degradation**: The system functions for non-root users but marks restricted data as `PRIVILEGE_RESTRICTED`.
+
+## Asset Categories & Analysis
+- **Kernel**: Version, Config, Mitigations (KASLR, SMEP, SMAP).
+- **Binaries**: Path-limited scan, ELF Analysis (NX, PIE, RELRO), setuid/setgid.
+- **Packages**: Transitive dependency graphs, OSV/NVD mapping, runtime usage.
+- **Daemons**: Port $\rightarrow$ PID $\rightarrow$ Binary mapping, External exposure.
+- **3rd Party**: Proprietary blobs, vendor signatures, provenance.
+
+## Technical Stack
+- **Core**: Python 3.10+, Pydantic, Loguru, Pytest.
+- **Analysis**: `pyelftools` (ELF), `psutil` (Processes/Net), `networkx` (Graph).
+- **API/Web**: FastAPI, React, Tailwind CSS.
 
 ## Coordination & Governance
-- **Global Coordination**: This root `CLAUDE.md` serves as the project's central coordinator.
-- **Distributed Tracking**: Each domain directory maintains its own:
-    - `CLAUDE.md`: Domain-specific requirements and task list.
-    - `progress.json`: Machine-readable state of tasks.
-    - `session_log.md`: Human-readable chronological record of agent actions and decisions.
+- **Global Coordination**: Root `CLAUDE.md`.
+- **Domain Execution**: Each plugin directory (`plugins/*`) and `core/graph` has its own `CLAUDE.md` and task tracking.
 - **Workflow**: Root coordinates $\rightarrow$ Domain executes $\rightarrow$ Domain logs $\rightarrow$ Root synchronizes.
-
-## Tech Stack
-- **Core**: Python 3.10+, Pydantic, Loguru, Pytest
-- **Plugins**: cyclonedx-python-lib, python-nvdlib, psutil, pycryptodome
-- **API**: FastAPI, Uvicorn, SQLAlchemy 2.0
-- **Data**: PostgreSQL (Prod), SQLite (Dev), Redis (Caching)
-- **Web**: React, Tailwind CSS, TanStack Table, Zustand, Lucide React

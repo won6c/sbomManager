@@ -3,6 +3,7 @@ from enum import Enum, auto
 class PluginType(Enum):
     PARSER = auto()
     CVE_PROVIDER = auto()
+    CPE_RESOLVER = auto()
 
 class PluginManager:
     """

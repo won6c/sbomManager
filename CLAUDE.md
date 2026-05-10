@@ -20,7 +20,9 @@ graph TD
 
     subgraph "Intelligence Layer"
         Core --> Graph[Relation Graph]
-        Graph --> Risk[Risk Scoring Engine]
+        Graph --> CPE[CPE Resolver]
+        CPE --> CVE[CVE Provider]
+        CVE --> Risk[Risk Scoring Engine]
         Risk --> Insights[Attack Path Insights]
     end
 
@@ -41,7 +43,7 @@ graph TD
 - **3rd Party**: Proprietary blobs, vendor signatures, provenance.
 
 ## Technical Stack
-- **Core**: Python 3.10+, Pydantic, Loguru, Pytest.
+- **Core**: Python 3.10+, Pydantic, Loguru, Pytest, `requests`, `python-dotenv`.
 - **Analysis**: `pyelftools` (ELF), `psutil` (Processes/Net), `networkx` (Graph).
 - **API/Web**: FastAPI, React, Tailwind CSS.
 

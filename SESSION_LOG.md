@@ -12,3 +12,14 @@ Architecture Finalized: All CLAUDE.md files synchronized with risk-aware asset s
 - Implemented non-root graceful degradation with PRIVILEGE_RESTRICTED markers.
 - Verified with tests/verify_kernel.py (Passed).
 - Handled missing /proc/config.gz and /boot/config- files gracefully.
+
+### 2026-05-11: Version -> CPE -> CVE Flow Implementation
+- **Goal**: Automate the mapping from software versions to CVEs using external intelligence.
+- **Key Achievements**:
+    - Designed and implemented `CPEResolverPlugin` to bridge Version $\rightarrow$ CPE.
+    - Integrated Shodan and Metasploit APIs for real-world CPE resolution.
+    - Implemented a file-based cache with 30-day TTL in `data/cpe_cache/`.
+    - Enhanced `core/pipeline.py` to execute CPE resolution during the `ENRICH` stage.
+    - Added robust HTTP retry logic (handling 429 Rate Limits) using `requests` and `urllib3`.
+    - Verified the end-to-end flow via integration tests (`tests/test_cpe_cve_flow.py`).
+    - Secured API key management using `.env`.

@@ -1,21 +1,35 @@
 {
-    "project_status": "Foundation Complete",
-    "current_phase": "Core Orchestration",
-    "completed_tasks": [
-        "Root Architecture Definition",
-        "Distributed Governance Setup",
-        "Core Module Implementation",
-        "Core Validation Suite",
-        "Detailed Asset Scope Specification",
-        "Tech Stack Finalization"
-    ],
-    "todo": [
-        "Implement Plugin Layer (Parsers & Providers)",
-        "Implement Data Persistence Layer",
-        "Develop FastAPI Backend",
-        "Build Elastic UI Dashboard",
-        "Integration Testing & Validation"
-    ],
-    "next_milestone": "Plugin Layer Implementation",
-    "last_updated": "2026-04-17"
+  "project_status": "Foundation Complete",
+  "current_phase": "Core Orchestration",
+  "completed_tasks": [
+    "Root Architecture Definition",
+    "Distributed Governance Setup",
+    "Core Module Implementation",
+    "Core Validation Suite",
+    "Detailed Asset Scope Specification",
+    "Tech Stack Finalization"
+  ],
+  "todo": [
+    "Implement Plugin Layer (Parsers & Providers)",
+    "Implement Data Persistence Layer",
+    "Develop FastAPI Backend",
+    "Build Elastic UI Dashboard",
+    "Integration Testing & Validation"
+  ],
+  "next_milestone": "Plugin Layer Implementation",
+  "last_updated": "2026-05-05",
+  "done": [
+    {
+      "id": "S-PROBE-001",
+      "date": "2026-05-05",
+      "action": "impl-kernel-probe",
+      "detail": "Implemented KernelProbe for version and security config extraction. Added keyword-based filtering for KASLR/SMEP/SMAP and graceful degradation for non-root users. Verified with tests/verify_kernel.py."
+    },
+    {
+      "id": "S-PROBE-002",
+      "date": "2026-05-05",
+      "action": "impl-daemon-probe",
+      "detail": "Implemented DaemonProbe with hybrid psutil/systemctl approach. Resolves listening ports to binaries via systemd inventory fallback when PIDs are restricted. Fixed binary path parsing bugs. Verified with tests/verify_daemons.py."
+    }
+  ]
 }

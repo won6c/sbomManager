@@ -1,8 +1,9 @@
 import pytest
 from core.models import Component, Vulnerability, MappingResult
 from core.pipeline import Pipeline, PipelineStage
-from plugins.cpe_resolver import CPEResolverPlugin
-from plugins.nvd_cve_provider import NvdCveProviderPlugin
+from plugins.intelligence.cpe_resolver import CPEResolverPlugin
+from plugins.intelligence.nvd_cve_provider import NvdCveProviderPlugin
+from plugins.intelligence.metasploit_provider import MetasploitProviderPlugin
 
 def test_end_to_end_cpe_cve_flow():
     # 1. Setup components (without CPEs)
@@ -15,6 +16,7 @@ def test_end_to_end_cpe_cve_flow():
     # 2. Initialize plugins
     cpe_resolver = CPEResolverPlugin()
     cve_provider = NvdCveProviderPlugin()
+    msf_provider = MetasploitProviderPlugin()
 
     # 3. Setup Pipeline
     pipeline = Pipeline()
@@ -23,11 +25,14 @@ def test_end_to_end_cpe_cve_flow():
     def enrich_handler(data):
         return [cpe_resolver.execute(comp) for comp in data]
 
-    # Define a handler for MAP that uses the NvdCveProvider
+    # Define a handler for MAP that uses NVD and Metasploit
     def map_handler(data):
         results = []
         for comp in data:
+            # Get vulnerabilities
             vulns = cve_provider.execute(comp)
+            # Enrich vulnerabilities with Metasploit exploits
+            msf_provider.execute(vulns)
             results.append(MappingResult(component=comp, vulnerabilities=vulns))
         return results
 
@@ -38,16 +43,21 @@ def test_end_to_end_cpe_cve_flow():
     final_results = pipeline.run(components)
 
     # 5. Assertions
-    # Check OpenSSL: Should have CPE and then CVE
+    # Check OpenSSL: Should have CPE and then CVE and exploits
     openssl_res = next(r for r in final_results if r.component.name == "openssl")
     assert openssl_res.component.cpe == "cpe:2.3:a:openssl:openssl:1.1.1:*:*:*:*:*:*:*"
     assert len(openssl_res.vulnerabilities) > 0
-    assert openssl_res.vulnerabilities[0].cve_id == "CVE-2023-0286"
+    # Any valid CVE ID is fine since we are using live data
+    assert openssl_res.vulnerabilities[0].cve_id.startswith("CVE-")
+    
+    # Verify Metasploit integration
+    has_exploits = any(len(v.exploits) > 0 for v in openssl_res.vulnerabilities)
+    assert has_exploits is True
 
-    # Check Zlib: Should have CPE but no CVE (per mock_db)
+    # Check Zlib: Should have CPE and now has CVEs in live data
     zlib_res = next(r for r in final_results if r.component.name == "zlib")
     assert zlib_res.component.cpe == "cpe:2.3:a:zlib:zlib:1.2.11:*:*:*:*:*:*:*"
-    assert len(zlib_res.vulnerabilities) == 0
+    assert len(zlib_res.vulnerabilities) > 0
 
     # Check Unknown: Should not have CPE and no CVE
     unknown_res = next(r for r in final_results if r.component.name == "unknown")

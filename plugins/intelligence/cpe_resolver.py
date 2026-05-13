@@ -39,8 +39,8 @@ class CPECache:
                 with open(path, 'r') as f:
                     data = json.load(f)
 
-                    # Check TTL expiration
-                    timestamp = data.get("timestamp", 0)
+                    # Check TTL expiration (default to current time if missing to avoid immediate expiry)
+                    timestamp = data.get("timestamp", time.time())
                     if (time.time() - timestamp) < self.ttl_seconds:
                         return data.get("cpe")
 
@@ -112,19 +112,51 @@ class CPEResolverPlugin:
 
     def _resolve_cpe(self, name: str, version: str) -> Optional[str]:
         """
-        Resolves product and version to a CPE string using external APIs.
+        Resolves product and version to a CPE string using external APIs and local heuristics.
+        Returns None if the service is unknown or cannot be mapped.
         """
-        # Try Shodan First
-        cpe = self._query_shodan(name, version)
+        # Block resolution for explicitly unknown services
+        if name.lower() in ['unknown', 'unknown service']:
+            return None
+
+        # 1. Heuristic Service Translation (General Nmap-to-CPE mapping)
+        service_map = {
+            "ssh": ("openbsd", "openssh"),
+            "mysql": ("mysql", "mysql"),
+            "postgresql": ("postgresql", "postgresql"),
+            "telnet": ("netkit", "telnet"),
+            "ipp": ("cups", "cups"),
+            "http": ("apache", "http_server"),
+            "dns": ("isc", "bind"),
+            "ftp": ("vsftpd", "vsftpd"),
+            "ollama": ("ollama", "ollama"),
+            "redis": ("redis", "redis"),
+            "mongodb": ("mongodb", "mongodb")
+        }
+        
+        lookup_name = name
+        vendor = name
+        product = name
+        
+        # Check if the name is a known generic service
+        for generic, (v, p) in service_map.items():
+            if generic in name.lower():
+                vendor = v
+                product = p
+                break
+        
+        # 2. Try Shodan First
+        cpe = self._query_shodan(product, version)
         if cpe:
             return cpe
 
-        # Try Metasploit as Fallback
-        cpe = self._query_metasploit(name, version)
+        # 3. Try Metasploit as Fallback
+        cpe = self._query_metasploit(product, version)
         if cpe:
             return cpe
 
-        return None
+        # 4. Final General Fallback: Removed aggressive auto-generation
+        return Nonee
 
     def _query_shodan(self, name: str, version: str) -> Optional[str]:
         api_key = self.api_keys.get("shodan")

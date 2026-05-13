@@ -6,7 +6,7 @@ sys.path.append(os.getcwd())
 
 from core.models import Component, Vulnerability
 from plugins.cyclonedx_parser import CycloneDXParserPlugin
-from plugins.nvd_cve_provider import NvdCveProviderPlugin
+from plugins.intelligence.nvd_cve_provider import NvdCveProviderPlugin
 
 def run_test(name, func):
     print(f"Running {name}...", end=" ")

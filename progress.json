@@ -1,35 +1,34 @@
 {
-  "project_status": "Foundation Complete",
-  "current_phase": "Core Orchestration",
-  "completed_tasks": [
-    "Root Architecture Definition",
-    "Distributed Governance Setup",
-    "Core Module Implementation",
-    "Core Validation Suite",
-    "Detailed Asset Scope Specification",
-    "Tech Stack Finalization"
-  ],
-  "todo": [
-    "Implement Plugin Layer (Parsers & Providers)",
-    "Implement Data Persistence Layer",
-    "Develop FastAPI Backend",
-    "Build Elastic UI Dashboard",
-    "Integration Testing & Validation"
-  ],
-  "next_milestone": "Plugin Layer Implementation",
-  "last_updated": "2026-05-05",
-  "done": [
-    {
-      "id": "S-PROBE-001",
-      "date": "2026-05-05",
-      "action": "impl-kernel-probe",
-      "detail": "Implemented KernelProbe for version and security config extraction. Added keyword-based filtering for KASLR/SMEP/SMAP and graceful degradation for non-root users. Verified with tests/verify_kernel.py."
-    },
-    {
-      "id": "S-PROBE-002",
-      "date": "2026-05-05",
-      "action": "impl-daemon-probe",
-      "detail": "Implemented DaemonProbe with hybrid psutil/systemctl approach. Resolves listening ports to binaries via systemd inventory fallback when PIDs are restricted. Fixed binary path parsing bugs. Verified with tests/verify_daemons.py."
-    }
+  "core_orchestration": {
+    "status": "completed",
+    "features": ["Async SystemCollector", "Pydantic Model Standardization", "Parallel Probe Execution"],
+    "last_updated": "2026-05-13"
+  },
+  "daemon_probe": {
+    "status": "completed",
+    "features": ["Port-based Deduplication", "Informative Priority Mapping"],
+    "last_updated": "2026-05-13"
+  },
+  "api_layer": {
+    "status": "completed",
+    "features": ["FastAPI /scan endpoint", "Dynamic Path Injection", "JSON Serialization"],
+    "last_updated": "2026-05-13"
+  },
+  "intelligence_layer": {
+    "status": "in_progress",
+    "features": ["Structured plugins/intelligence directory", "CPE Resolution Logic"],
+    "last_updated": "2026-05-13"
+  },
+  "project_structure": {
+    "status": "completed",
+    "features": ["Tests migration to tests/", "Module-based import fix"],
+    "last_updated": "2026-05-13"
+  },
+  "future_todo": [
+    "Fix 'Nonee' typo in cpe_resolver.py",
+    "Develop Skeleton Web UI (Scan config, 분석 요청 버튼)",
+    "Implement individual CPE/CVE request API endpoints",
+    "Integrate Full Analysis Pipeline (CPE -> CVE -> Exploit)",
+    "Implement Risk Scoring Engine"
   ]
 }

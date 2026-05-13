@@ -54,7 +54,7 @@ def test_cyclonedx_parser_logic():
 def test_nvd_cve_provider_logic():
     # This test defines the expected behavior for the NvdCveProviderPlugin
     # It should take a Component object and return a list of Vulnerability objects.
-    from plugins.nvd_cve_provider import NvdCveProviderPlugin
+    from plugins.intelligence.nvd_cve_provider import NvdCveProviderPlugin
 
     plugin = NvdCveProviderPlugin()
     # We will mock the network call inside the implementation,

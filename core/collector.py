@@ -1,5 +1,6 @@
 import logging
 import asyncio
+import os
 from datetime import datetime
 from typing import List, Dict, Any, Optional
 from concurrent.futures import ThreadPoolExecutor
@@ -9,11 +10,14 @@ from core.models import (
     KernelState, 
     DaemonAsset, 
     BinaryAsset, 
-    PrivilegeLevel
+    PrivilegeLevel,
+    Component
 )
 from plugins.kernel.probe import KernelProbe
 from plugins.daemons.probe import DaemonProbe
 from plugins.binaries.probe import BinaryProbePlugin
+from plugins.intelligence.cpe_resolver import CPEResolverPlugin
+from plugins.intelligence.cve_provider import CVEProviderPlugin
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +31,8 @@ class SystemCollector:
         self.kernel_probe = KernelProbe()
         self.daemon_probe = DaemonProbe()
         self.binary_probe = BinaryProbePlugin()
+        self.cpe_resolver = CPEResolverPlugin()
+        self.cve_provider = CVEProviderPlugin()
         # Using ThreadPoolExecutor because probe tools (nmap, psutil, os.walk) are synchronous I/O bound
         self.executor = ThreadPoolExecutor(max_workers=5)
 
@@ -39,7 +45,6 @@ class SystemCollector:
         logger.info(f"Starting asynchronous full system scan. Target binary paths: {binary_scan_paths}")
 
         # Schedule all probes to run in parallel in the thread pool
-        # We wrap the synchronous probe methods in run_in_executor
         tasks = [
             loop.run_in_executor(self.executor, self.kernel_probe.probe),
             loop.run_in_executor(self.executor, self.daemon_probe.probe),
@@ -59,7 +64,7 @@ class SystemCollector:
         # 2. Process Daemon Result
         daemons_assets = []
         for d in daemons_raw:
-            daemons_assets.append(DaemonAsset(
+            asset = DaemonAsset(
                 port=d.get("port"),
                 protocol=d.get("protocol"),
                 address=d.get("address", "Unknown"),
@@ -70,12 +75,27 @@ class SystemCollector:
                 description=d.get("description"),
                 version=d.get("version"),
                 privilege_level=PrivilegeLevel.ROOT if d.get("user") == "root" else PrivilegeLevel.USER
-            ))
+            )
+            
+            # Enrich with CPE
+            name = asset.description or (asset.binary_path.split('/')[-1] if asset.binary_path != "Unknown" else None)
+            if name and name.lower() not in ["unknown", "unknown service"] and asset.version:
+                comp = Component(name=name, version=asset.version)
+                resolved = self.cpe_resolver.execute(comp)
+                asset.cpe = resolved.cpe 
+                
+                # Enrich with CVE if CPE exists
+                if asset.cpe and asset.cpe != "Unknown":
+                    asset.vulnerabilities = self.cve_provider.execute(asset.cpe)
+            else:
+                asset.cpe = "Unknown"
+            
+            daemons_assets.append(asset)
 
         # 3. Process Binary Result
         binaries_assets = []
         for b in binaries_raw:
-            binaries_assets.append(BinaryAsset(
+            asset = BinaryAsset(
                 path=b.get("path", "Unknown"),
                 sha256=b.get("sha256", "Unknown"),
                 permissions=b.get("permissions", "Unknown"),
@@ -84,7 +104,22 @@ class SystemCollector:
                 mitigations=b.get("mitigations", {}),
                 privilege_level=PrivilegeLevel.ROOT if b.get("is_setuid") or b.get("is_setgid") else PrivilegeLevel.USER,
                 version=b.get("version")
-            ))
+            )
+            
+            # Enrich with CPE
+            name = os.path.basename(asset.path) if asset.path != "Unknown" else None
+            if name and asset.version:
+                comp = Component(name=name, version=asset.version)
+                resolved = self.cpe_resolver.execute(comp)
+                asset.cpe = resolved.cpe
+                
+                # Enrich with CVE if CPE exists
+                if asset.cpe and asset.cpe != "Unknown":
+                    asset.vulnerabilities = self.cve_provider.execute(asset.cpe)
+            else:
+                asset.cpe = "Unknown"
+                
+            binaries_assets.append(asset)
 
         return FullSystemScanResult(
             kernel=kernel_state,
@@ -110,8 +145,20 @@ async def test_run():
         print(f"- Kernel: {result.kernel.version}")
         print(f"- Daemons found: {len(result.daemons)}")
         print(f"- Binaries found: {len(result.binaries)}")
-        print("\n--- Full Result Detail ---")
-        pprint.pprint(result)
+        print("\n--- FULL DETAILED RESULT ---")
+        
+        print("\n[DAEMONS]")
+        for d in result.daemons:
+            print(f"Port {d.port} ({d.protocol}): {d.description} | Version: {d.version} | CPE: {d.cpe} | CVEs: {len(d.vulnerabilities)}")
+            for v in d.vulnerabilities:
+                print(f"   -> {v.cve_id} [{v.severity}] {v.description[:100]}...")
+
+        print("\n[BINARIES]")
+        for b in result.binaries:
+            print(f"Path {b.path} | CPE: {b.cpe} | CVEs: {len(b.vulnerabilities)}")
+            for v in b.vulnerabilities:
+                print(f"   -> {v.cve_id} [{v.severity}] {v.description[:100]}...")
+
     except Exception as e:
         print(f"\n[!] Async Scan failed: {e}")
         import traceback

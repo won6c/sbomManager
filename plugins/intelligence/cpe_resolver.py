@@ -155,8 +155,12 @@ class CPEResolverPlugin:
         if cpe:
             return cpe
 
-        # 4. Final General Fallback: Removed aggressive auto-generation
-        return Nonee
+        # 4. Final General Fallback: If we have a valid name and version, 
+        # generate a synthetic CPE to allow for potential CVE lookups and identification.
+        if vendor and product and version:
+            return f"cpe:2.3:a:{vendor}:{product}:{version}:*:*:*:*:*:*:*"
+        
+        return None
 
     def _query_shodan(self, name: str, version: str) -> Optional[str]:
         api_key = self.api_keys.get("shodan")

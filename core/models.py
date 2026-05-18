@@ -46,6 +46,7 @@ class BinaryAsset(BaseModel):
     purl: Optional[str] = None
     cpe: Optional[str] = None
     version: Optional[str] = None
+    vulnerabilities: List[Any] = Field(default_factory=list)
 
 class DaemonAsset(BaseModel):
     port: Optional[int]
@@ -57,7 +58,9 @@ class DaemonAsset(BaseModel):
     user: str
     privilege_level: PrivilegeLevel = PrivilegeLevel.USER
     description: Optional[str] = None
+    cpe: Optional[str] = None
     version: Optional[str] = None
+    vulnerabilities: List[Any] = Field(default_factory=list)
 
 class FullSystemScanResult(BaseModel):
     kernel: KernelState

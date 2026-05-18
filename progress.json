@@ -1,8 +1,8 @@
 {
   "core_orchestration": {
     "status": "completed",
-    "features": ["Async SystemCollector", "Pydantic Model Standardization", "Parallel Probe Execution"],
-    "last_updated": "2026-05-13"
+    "features": ["Async SystemCollector", "Pydantic Model Standardization", "Parallel Probe Execution", "E2E Intelligence Chain Integration"],
+    "last_updated": "2026-05-18"
   },
   "daemon_probe": {
     "status": "completed",
@@ -10,14 +10,14 @@
     "last_updated": "2026-05-13"
   },
   "api_layer": {
-    "status": "completed",
+    "status": "partial",
     "features": ["FastAPI /scan endpoint", "Dynamic Path Injection", "JSON Serialization"],
-    "last_updated": "2026-05-13"
+    "last_updated": "2026-05-18"
   },
   "intelligence_layer": {
-    "status": "in_progress",
-    "features": ["Structured plugins/intelligence directory", "CPE Resolution Logic"],
-    "last_updated": "2026-05-13"
+    "status": "completed",
+    "features": ["CPE Resolution Logic", "Synthetic CPE Fallback", "NVD API CVE Provider", "Core Pipeline Integration"],
+    "last_updated": "2026-05-18"
   },
   "project_structure": {
     "status": "completed",
@@ -25,10 +25,10 @@
     "last_updated": "2026-05-13"
   },
   "future_todo": [
-    "Fix 'Nonee' typo in cpe_resolver.py",
+    "Fix FastAPI JSON serialization recursion error in /scan endpoint",
+    "Implement Package Probe for high-precision versioning",
     "Develop Skeleton Web UI (Scan config, 분석 요청 버튼)",
     "Implement individual CPE/CVE request API endpoints",
-    "Integrate Full Analysis Pipeline (CPE -> CVE -> Exploit)",
-    "Implement Risk Scoring Engine"
+    "Build the Risk Scoring Engine to prioritize vulnerabilities based on actual exploitability and exposure"
   ]
 }

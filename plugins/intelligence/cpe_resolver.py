@@ -155,8 +155,8 @@ class CPEResolverPlugin:
         if cpe:
             return cpe
 
-        # 4. Final General Fallback: Removed aggressive auto-generation
-        return Nonee
+        # 4. Final General Fallback: Force-generate a synthetic CPE if no API match is found
+        return f"cpe:2.3:a:{vendor}:{product}:{version}:*:*:*:*:*:*:*"
 
     def _query_shodan(self, name: str, version: str) -> Optional[str]:
         api_key = self.api_keys.get("shodan")

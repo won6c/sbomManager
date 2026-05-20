@@ -8,6 +8,13 @@ class PrivilegeLevel(str, Enum):
     USER = "USER"
     PRIVILEGE_RESTRICTED = "PRIVILEGE_RESTRICTED"
 
+class SbomRiskResult(BaseModel):
+    score: float
+    level: str
+    impact: int
+    feasibility: int
+    reason: str
+
 class Component(BaseModel):
     name: str
     version: Optional[str] = None
@@ -22,6 +29,7 @@ class Component(BaseModel):
 class Vulnerability(BaseModel):
     cve_id: str
     severity: str
+    cvss_score: Optional[float] = None
     description: str
     affected_versions: List[str] = Field(default_factory=list)
     exploits: List[Dict[str, Any]] = Field(default_factory=list)
@@ -46,7 +54,8 @@ class BinaryAsset(BaseModel):
     purl: Optional[str] = None
     cpe: Optional[str] = None
     version: Optional[str] = None
-    vulnerabilities: List[Any] = Field(default_factory=list)
+    vulnerabilities: List[Vulnerability] = Field(default_factory=list)
+    risk: Optional[SbomRiskResult] = None
 
 class DaemonAsset(BaseModel):
     port: Optional[int]
@@ -60,10 +69,13 @@ class DaemonAsset(BaseModel):
     description: Optional[str] = None
     cpe: Optional[str] = None
     version: Optional[str] = None
-    vulnerabilities: List[Any] = Field(default_factory=list)
+    vulnerabilities: List[Vulnerability] = Field(default_factory=list)
+    risk: Optional[SbomRiskResult] = None
 
 class FullSystemScanResult(BaseModel):
     kernel: KernelState
     daemons: List[DaemonAsset]
     binaries: List[BinaryAsset]
+    overall_risk_score: float = 0.0
+    overall_risk_level: str = "Low"
     timestamp: str

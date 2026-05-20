@@ -10,14 +10,19 @@
     "last_updated": "2026-05-13"
   },
   "api_layer": {
-    "status": "partial",
-    "features": ["FastAPI /scan endpoint", "Dynamic Path Injection", "JSON Serialization"],
-    "last_updated": "2026-05-18"
+    "status": "completed",
+    "features": ["FastAPI /scan endpoint", "Dynamic Path Injection", "JSON Serialization", "Recursion Error Fix (jsonable_encoder)"],
+    "last_updated": "2026-05-20"
   },
   "intelligence_layer": {
     "status": "completed",
-    "features": ["CPE Resolution Logic", "Synthetic CPE Fallback", "NVD API CVE Provider", "Core Pipeline Integration"],
-    "last_updated": "2026-05-18"
+    "features": ["CPE Resolution Logic", "Synthetic CPE Fallback", "NVD API CVE Provider", "Core Pipeline Integration", "CVSS Score Extraction"],
+    "last_updated": "2026-05-20"
+  },
+  "risk_engine": {
+    "status": "completed",
+    "features": ["TARA-based Scoring Methodology", "Impact vs Feasibility Matrix", "Context-aware Asset Risk Analysis"],
+    "last_updated": "2026-05-20"
   },
   "project_structure": {
     "status": "completed",
@@ -25,10 +30,11 @@
     "last_updated": "2026-05-13"
   },
   "future_todo": [
-    "Fix FastAPI JSON serialization recursion error in /scan endpoint",
     "Implement Package Probe for high-precision versioning",
     "Develop Skeleton Web UI (Scan config, 분석 요청 버튼)",
     "Implement individual CPE/CVE request API endpoints",
-    "Build the Risk Scoring Engine to prioritize vulnerabilities based on actual exploitability and exposure"
+    "Build Risk Visualizer dashboard for prioritized mitigation",
+    "Implement risk-based remediation guidance module",
+    "Introduce local caching layer (Redis/SQLite) for NVD API to reduce latency"
   ]
 }

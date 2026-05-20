@@ -42,21 +42,38 @@ class CVEProviderPlugin:
             data = response.json()
 
             vulnerabilities = []
-            for item in data.get("vulnerabilities", []):
+            # NVD API 2.0 returns a list of 'vulnerabilities'
+            cves_list = data.get("vulnerabilities", [])
+            
+            for item in cves_list:
                 cve_data = item.get("cve", {})
                 metrics = cve_data.get("metrics", {})
                 
-                # Try to get the CVSS score (prefer CVSS v3.1 -> v3.0 -> v2.0)
                 severity = "Unknown"
+                score = None
+                
+                # Priority: CVSS v3.1 -> v3.0 -> v2.0
                 cvss_v3 = metrics.get("cvssMetricV31", metrics.get("cvssMetricV30", []))
-                if cvss_v3 and cvss_v3:
-                    severity = cvss_v3[0].get("cvssData", {}).get("baseSeverity", "Unknown")
+                if cvss_v3 and isinstance(cvss_v3, list) and len(cvss_v3) > 0:
+                    cvss_data = cvss_v3[0].get("cvssData", {})
+                    severity = cvss_data.get("baseSeverity", "Unknown")
+                    score = cvss_data.get("baseScore")
+                else:
+                    cvss_v2 = metrics.get("cvssMetricV2", [])
+                    if cvss_v2 and isinstance(cvss_v2, list) and len(cvss_v2) > 0:
+                        cvss_data = cvss_v2[0].get("cvssData", {})
+                        score = cvss_data.get("baseScore")
+                        if score:
+                            if score >= 7.0: severity = "High"
+                            elif score >= 4.0: severity = "Medium"
+                            else: severity = "Low"
 
                 vulnerabilities.append(Vulnerability(
                     cve_id=cve_data.get("id", "Unknown"),
                     severity=severity,
+                    cvss_score=score,
                     description=cve_data.get("descriptions", [{}])[0].get("value", "No description available"),
-                    affected_versions=[], # More complex to extract from NVD JSON
+                    affected_versions=[],
                     exploits=[]
                 ))
 

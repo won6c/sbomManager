@@ -18,6 +18,7 @@ from plugins.daemons.probe import DaemonProbe
 from plugins.binaries.probe import BinaryProbePlugin
 from plugins.intelligence.cpe_resolver import CPEResolverPlugin
 from plugins.intelligence.cve_provider import CVEProviderPlugin
+from core.risk_engine import RiskScoringEngine
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +34,7 @@ class SystemCollector:
         self.binary_probe = BinaryProbePlugin()
         self.cpe_resolver = CPEResolverPlugin()
         self.cve_provider = CVEProviderPlugin()
+        self.risk_engine = RiskScoringEngine()
         # Using ThreadPoolExecutor because probe tools (nmap, psutil, os.walk) are synchronous I/O bound
         self.executor = ThreadPoolExecutor(max_workers=5)
 
@@ -121,12 +123,14 @@ class SystemCollector:
                 
             binaries_assets.append(asset)
 
-        return FullSystemScanResult(
+        scan_result = FullSystemScanResult(
             kernel=kernel_state,
             daemons=daemons_assets,
             binaries=binaries_assets,
             timestamp=datetime.now().isoformat()
         )
+        # 4. Calculate Risk Scores
+        return self.risk_engine.analyze_system(scan_result)
 
 async def test_run():
     '''
@@ -150,14 +154,14 @@ async def test_run():
         print("\n[DAEMONS]")
         for d in result.daemons:
             print(f"Port {d.port} ({d.protocol}): {d.description} | Version: {d.version} | CPE: {d.cpe} | CVEs: {len(d.vulnerabilities)}")
-            for v in d.vulnerabilities:
-                print(f"   -> {v.cve_id} [{v.severity}] {v.description[:100]}...")
+        for v in d.vulnerabilities:
+            print(f"   -> {v.cve_id} [{v.severity}] Score: {v.cvss_score} | {v.description[:100]}...")
 
         print("\n[BINARIES]")
         for b in result.binaries:
             print(f"Path {b.path} | CPE: {b.cpe} | CVEs: {len(b.vulnerabilities)}")
-            for v in b.vulnerabilities:
-                print(f"   -> {v.cve_id} [{v.severity}] {v.description[:100]}...")
+        for v in b.vulnerabilities:
+            print(f"   -> {v.cve_id} [{v.severity}] Score: {v.cvss_score} | {v.description[:100]}...")
 
     except Exception as e:
         print(f"\n[!] Async Scan failed: {e}")

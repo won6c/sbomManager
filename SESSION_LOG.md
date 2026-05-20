@@ -65,3 +65,13 @@ Architecture Finalized: All CLAUDE.md files synchronized with risk-aware asset s
     - Fixed `AttributeError` in `DaemonAsset` by restoring `description` field.
     - Resolved `ValueError` regarding missing `cpe` field in Asset models.
 - **Next Milestone**: Fix FastAPI JSON serialization error and implement Package Probe.
+
+## 2026-05-20: API Stabilization and TARA Risk Scoring Implementation
+- **API Fix**: Resolved `maximum recursion depth exceeded` error in `/scan` endpoint by replacing `model_dump()` with `jsonable_encoder` and explicitly typing `Vulnerability` lists in Pydantic models.
+- **CVSS Intelligence**: Updated `CVEProviderPlugin` to extract precise CVSS v3.1/3.0/2.0 base scores from NVD API v2.0, moving beyond simple severity labels.
+- **Risk Engine Implementation**:
+    - Designed and implemented `core/risk_engine.py` using a TARA-based methodology ($\text{Impact} \times \text{Feasibility}$).
+    - **Impact Logic**: Automation based on `PrivilegeLevel` (Root vs User) and max `CVSS Score`.
+    - **Feasibility Logic**: Calculation based on `Exposure` (External vs Internal), `Mitigations` (NX, PIE, RELRO), and existence ofKNOWN exploits.
+- **Pipeline Integration**: Integrated the Risk Engine into `SystemCollector.collect()`, enabling end-to-end flow: $\text{Discovery} \rightarrow \text{CPE} \rightarrow \text{CVE} \rightarrow \text{Risk Score}$.
+- **Verification**: Validated the full pipeline via API, confirming correct risk scores (e.g., Critical/High) for vulnerable external services in the JSON output.

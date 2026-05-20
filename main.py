@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel
 from typing import List
 import uvicorn
@@ -20,9 +21,8 @@ async def run_scan(request: ScanRequest):
         # Use the core collector to perform an async system scan
         result = await collector.collect(request.binary_scan_paths)
         
-        # Since we changed models to Pydantic, we can simply return the result
-        # FastAPI handles the JSON serialization automatically via .model_dump()
-        return result.model_dump()
+        # Use jsonable_encoder to prevent recursion errors and ensure API compatibility
+        return jsonable_encoder(result)
     except Exception as e:
         import traceback
         logger.error(f"Scan error: {traceback.format_exc()}")

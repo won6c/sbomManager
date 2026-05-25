@@ -75,3 +75,35 @@ Architecture Finalized: All CLAUDE.md files synchronized with risk-aware asset s
     - **Feasibility Logic**: Calculation based on `Exposure` (External vs Internal), `Mitigations` (NX, PIE, RELRO), and existence ofKNOWN exploits.
 - **Pipeline Integration**: Integrated the Risk Engine into `SystemCollector.collect()`, enabling end-to-end flow: $\text{Discovery} \rightarrow \text{CPE} \rightarrow \text{CVE} \rightarrow \text{Risk Score}$.
 - **Verification**: Validated the full pipeline via API, confirming correct risk scores (e.g., Critical/High) for vulnerable external services in the JSON output.
+
+## 2026-05-25: Infra Optimization and Reachability-Aware Intelligence Integration
+- **Infra Optimization (SQLite Cache)**:
+    - Implemented `CVEStorage` using SQLite to replace flat-file JSON cache.
+    - Achieved high-performance vulnerability lookups and mitigated NVD API rate limits.
+- **Intelligence Feature Expansion (from packages_dev branch)**:
+    - **Reachability Analysis**: Integrated `/proc/[pid]/maps` analysis to detect if a binary/library is actually loaded in memory.
+    - **OSV Integration**: Added `OSVCVEProvider` to complement NVD with open-source specific vulnerability data.
+    - **SBOM Parsing**: Implemented `CycloneDXParser` to allow ingestion of standard SBOM files.
+- **API Granularization**:
+    - Decomposed the monolithic `/scan` endpoint into specialized intelligence APIs: `/intelligence/cpe`, `/intelligence/cve`, `/intelligence/osv`, `/intelligence/reachability`, and `/intelligence/sbom/parse`.
+- **Full Pipeline Integration**:
+    - Updated `SystemCollector` to a "Reachability-Aware" flow: `Discovery` $\rightarrow$ `Reachability Check` $\rightarrow$ `NVD/OSV Ensemble` $\rightarrow$ `TARA Risk Scoring`.
+    - Risk scoring now treats "Loaded in Memory" as a critical feasibility multiplier.
+- **Validation**: Verified all new features via `tests/verify_new_features.py` and live API requests.
+
+### Pending ToDo:
+- [ ] Implement Package Probe for high-precision versioning.
+- [ la l] Build Risk Visualizer dashboard for prioritized mitigation.
+- [ ] Implement risk-based remediation guidance module.
+- [ ] Full NVD Mirroring for zero-API dependency.
+
+
+## 2026-05-25: NVD API Caching Implementation
+- **Goal**: Mitigate NVD API rate limiting and reduce latency for repeated CVE lookups.
+- **Key Accomplishments**:
+    - Implemented `CVECache` class providing file-based storage in `data/nvd_cache/`.
+    - Integrated cache logic into `NvdCveProviderPlugin` (Cache Check $\rightarrow$ API Call $\rightarrow$ Update).
+    - Set 7-day TTL for vulnerability data to balance freshness and performance.
+    - Handled empty results (404) by caching them to prevent repeated useless API calls.
+- **Verification**: Developed `tests/verify_nvd_cache.py` and verified request duration dropped from ~5.6s to ~0.03s on cache hit.
+

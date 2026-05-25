@@ -11,13 +11,16 @@ from core.models import (
     DaemonAsset, 
     BinaryAsset, 
     PrivilegeLevel,
-    Component
+    Component,
+    Vulnerability
 )
 from plugins.kernel.probe import KernelProbe
 from plugins.daemons.probe import DaemonProbe
 from plugins.binaries.probe import BinaryProbePlugin
 from plugins.intelligence.cpe_resolver import CPEResolverPlugin
-from plugins.intelligence.cve_provider import CVEProviderPlugin
+from plugins.intelligence.nvd_cve_provider import NvdCveProviderPlugin
+from plugins.packages.osv import OSVCVEProvider
+from plugins.packages.reachability import ProcMapsReachabilityAnalyzer
 from core.risk_engine import RiskScoringEngine
 
 logger = logging.getLogger(__name__)
@@ -25,45 +28,74 @@ logger = logging.getLogger(__name__)
 class SystemCollector:
     '''
     Orchestrates the discovery of system assets by coordinating 
-    different probes (Kernel, Daemons, Binaries) asynchronously.
+    different probes (Kernel, Daemons, Binaries) and enriching them 
+    with Intelligence (CPE, CVE, OSV) and Reachability analysis.
     '''
-
     def __init__(self):
         self.kernel_probe = KernelProbe()
         self.daemon_probe = DaemonProbe()
         self.binary_probe = BinaryProbePlugin()
         self.cpe_resolver = CPEResolverPlugin()
-        self.cve_provider = CVEProviderPlugin()
+        self.nvd_provider = NvdCveProviderPlugin()
+        self.osv_provider = OSVCVEProvider()
+        self.reachability = ProcMapsReachabilityAnalyzer()
         self.risk_engine = RiskScoringEngine()
-        # Using ThreadPoolExecutor because probe tools (nmap, psutil, os.walk) are synchronous I/O bound
+        
         self.executor = ThreadPoolExecutor(max_workers=5)
+
+    async def _enrich_asset_vulnerabilities(self, asset_cpe: Optional[str], purl: Optional[str] = None) -> List[Vulnerability]:
+        '''
+        Enrich asset with vulnerabilities from both NVD and OSV.
+        '''
+        vulns = []
+        
+        # 1. NVD Query (Standard CPE based)
+        if asset_cpe and asset_cpe != "Unknown":
+            nvd_vulns = self.nvd_provider.execute(Component(name="temp", version="temp", cpe=asset_cpe))
+            vulns.extend(nvd_vulns)
+            
+        # 2. OSV Query (PURL based)
+        if purl:
+            try:
+                osv_raw = await self.osv_provider.fetch_vulnerabilities(purl)
+                osv_vulns = [Vulnerability(**v) for v in osv_raw]
+                vulns.extend(osv_vulns)
+            except Exception as e:
+                logger.error(f"OSV enrichment failed for {purl}: {e}")
+        
+        # Deduplicate by CVE ID
+        seen = set()
+        unique_vulns = []
+        for v in vulns:
+            if v.cve_id not in seen:
+                unique_vulns.append(v)
+                seen.add(v.cve_id)
+        
+        return unique_vulns
 
     async def collect(self, binary_scan_paths: List[str]) -> FullSystemScanResult:
         '''
-        Performs a full system scan asynchronously and returns a standardized result.
-        :param binary_scan_paths: List of absolute paths to scan for binaries.
+        Performs a full system scan and returns a standardized result.
         '''
         loop = asyncio.get_running_loop()
-        logger.info(f"Starting asynchronous full system scan. Target binary paths: {binary_scan_paths}")
+        logger.info(f"Starting integrated system scan. Paths: {binary_scan_paths}")
 
-        # Schedule all probes to run in parallel in the thread pool
+        # Step 1: Parallel Discovery
         tasks = [
             loop.run_in_executor(self.executor, self.kernel_probe.probe),
             loop.run_in_executor(self.executor, self.daemon_probe.probe),
             loop.run_in_executor(self.executor, lambda: self.binary_probe.execute({"scan_paths": binary_scan_paths}))
         ]
-
-        # Wait for all probes to complete
         kernel_raw, daemons_raw, binaries_raw = await asyncio.gather(*tasks)
 
-        # 1. Process Kernel Result
+        # Process Kernel
         kernel_state = KernelState(
             version=kernel_raw.get("version", "Unknown"),
             config=kernel_raw.get("config", {}),
             is_root=self.kernel_probe.is_root
         )
 
-        # 2. Process Daemon Result
+        # Process Daemons
         daemons_assets = []
         for d in daemons_raw:
             asset = DaemonAsset(
@@ -79,22 +111,27 @@ class SystemCollector:
                 privilege_level=PrivilegeLevel.ROOT if d.get("user") == "root" else PrivilegeLevel.USER
             )
             
-            # Enrich with CPE
+            # Reachability Verification
+            if asset.binary_path and asset.binary_path != "Unknown":
+                is_loaded, regions = self.reachability.check_memory_load(asset.binary_path)
+                asset.is_reachable = is_loaded
+                asset.memory_regions = regions
+
+            # Intelligence Enrichment
             name = asset.description or (asset.binary_path.split('/')[-1] if asset.binary_path != "Unknown" else None)
-            if name and name.lower() not in ["unknown", "unknown service"] and asset.version:
+            if name and asset.version:
                 comp = Component(name=name, version=asset.version)
                 resolved = self.cpe_resolver.execute(comp)
-                asset.cpe = resolved.cpe 
+                asset.cpe = resolved.cpe
                 
-                # Enrich with CVE if CPE exists
-                if asset.cpe and asset.cpe != "Unknown":
-                    asset.vulnerabilities = self.cve_provider.execute(asset.cpe)
+                purl = f"pkg:generic/{name}@{asset.version}" if asset.version else None
+                asset.vulnerabilities = await self._enrich_asset_vulnerabilities(asset.cpe, purl)
             else:
                 asset.cpe = "Unknown"
             
             daemons_assets.append(asset)
 
-        # 3. Process Binary Result
+        # Process Binaries
         binaries_assets = []
         for b in binaries_raw:
             asset = BinaryAsset(
@@ -108,16 +145,21 @@ class SystemCollector:
                 version=b.get("version")
             )
             
-            # Enrich with CPE
+            # Reachability Verification
+            if asset.path and asset.path != "Unknown":
+                is_loaded, regions = self.reachability.check_memory_load(asset.path)
+                asset.is_reachable = is_loaded
+                asset.memory_regions = regions
+
+            # Intelligence Enrichment
             name = os.path.basename(asset.path) if asset.path != "Unknown" else None
             if name and asset.version:
                 comp = Component(name=name, version=asset.version)
                 resolved = self.cpe_resolver.execute(comp)
                 asset.cpe = resolved.cpe
                 
-                # Enrich with CVE if CPE exists
-                if asset.cpe and asset.cpe != "Unknown":
-                    asset.vulnerabilities = self.cve_provider.execute(asset.cpe)
+                purl = f"pkg:generic/{name}@{asset.version}" if asset.version else None
+                asset.vulnerabilities = await self._enrich_asset_vulnerabilities(asset.cpe, purl)
             else:
                 asset.cpe = "Unknown"
                 
@@ -129,45 +171,6 @@ class SystemCollector:
             binaries=binaries_assets,
             timestamp=datetime.now().isoformat()
         )
-        # 4. Calculate Risk Scores
-        return self.risk_engine.analyze_system(scan_result)
-
-async def test_run():
-    '''
-    Local test runner to verify the asynchronous collection logic.
-    '''
-    import pprint
-    logging.basicConfig(level=logging.INFO)
-    
-    collector = SystemCollector()
-    test_paths = ["/usr/local/bin", "/bin"] 
-    print(f"[*] Starting Async Test with paths: {test_paths}...")
-    
-    try:
-        result = await collector.collect(test_paths)
-        print("\n[+] Async Scan completed successfully!")
-        print(f"- Kernel: {result.kernel.version}")
-        print(f"- Daemons found: {len(result.daemons)}")
-        print(f"- Binaries found: {len(result.binaries)}")
-        print("\n--- FULL DETAILED RESULT ---")
         
-        print("\n[DAEMONS]")
-        for d in result.daemons:
-            print(f"Port {d.port} ({d.protocol}): {d.description} | Version: {d.version} | CPE: {d.cpe} | CVEs: {len(d.vulnerabilities)}")
-        for v in d.vulnerabilities:
-            print(f"   -> {v.cve_id} [{v.severity}] Score: {v.cvss_score} | {v.description[:100]}...")
-
-        print("\n[BINARIES]")
-        for b in result.binaries:
-            print(f"Path {b.path} | CPE: {b.cpe} | CVEs: {len(b.vulnerabilities)}")
-        for v in b.vulnerabilities:
-            print(f"   -> {v.cve_id} [{v.severity}] Score: {v.cvss_score} | {v.description[:100]}...")
-
-    except Exception as e:
-        print(f"\n[!] Async Scan failed: {e}")
-        import traceback
-        traceback.print_exc()
-
-if __name__ == "__main__":
-    # Run the async test
-    asyncio.run(test_run())
+        # Calculate Risk Scores (Now aware of Reachability)
+        return self.risk_engine.analyze_system(scan_result)

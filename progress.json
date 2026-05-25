@@ -1,8 +1,8 @@
 {
   "core_orchestration": {
     "status": "completed",
-    "features": ["Async SystemCollector", "Pydantic Model Standardization", "Parallel Probe Execution", "E2E Intelligence Chain Integration"],
-    "last_updated": "2026-05-18"
+    "features": ["Async SystemCollector", "Pydantic Model Standardization", "Parallel Probe Execution", "E2E Intelligence Chain Integration", "SOTP-Reachability Pipeline Integration"],
+    "last_updated": "2026-05-25"
   },
   "daemon_probe": {
     "status": "completed",
@@ -11,18 +11,18 @@
   },
   "api_layer": {
     "status": "completed",
-    "features": ["FastAPI /scan endpoint", "Dynamic Path Injection", "JSON Serialization", "Recursion Error Fix (jsonable_encoder)"],
-    "last_updated": "2026-05-20"
+    "features": ["FastAPI /scan endpoint", "Dynamic Path Injection", "JSON Serialization", "Recursion Error Fix (jsonable_encoder)", "Granular Intelligence Endpoints (CPE, CVE, OSV, Reachability, SBOM)"],
+    "last_updated": "2026-05-25"
   },
   "intelligence_layer": {
     "status": "completed",
-    "features": ["CPE Resolution Logic", "Synthetic CPE Fallback", "NVD API CVE Provider", "Core Pipeline Integration", "CVSS Score Extraction"],
-    "last_updated": "2026-05-20"
+    "features": ["CPE Resolution Logic", "Synthetic CPE Fallback", "NVD API CVE Provider", "Core Pipeline Integration", "CVSS Score Extraction", "Local SQLite CVE Caching", "OSV Vulnerability Integration"],
+    "last_updated": "2026-05-25"
   },
   "risk_engine": {
     "status": "completed",
-    "features": ["TARA-based Scoring Methodology", "Impact vs Feasibility Matrix", "Context-aware Asset Risk Analysis"],
-    "last_updated": "2026-05-20"
+    "features": ["TARA-based Scoring Methodology", "Impact vs Feasibility Matrix", "Context-aware Asset Risk Analysis", "Reachability-Based Feasibility Weighting"],
+    "last_updated": "2026-05-25"
   },
   "project_structure": {
     "status": "completed",
@@ -32,9 +32,8 @@
   "future_todo": [
     "Implement Package Probe for high-precision versioning",
     "Develop Skeleton Web UI (Scan config, 분석 요청 버튼)",
-    "Implement individual CPE/CVE request API endpoints",
     "Build Risk Visualizer dashboard for prioritized mitigation",
     "Implement risk-based remediation guidance module",
-    "Introduce local caching layer (Redis/SQLite) for NVD API to reduce latency"
+    "Introduce local full-mirror NVD DB to completely remove API dependency"
   ]
 }

@@ -33,6 +33,7 @@ class Vulnerability(BaseModel):
     description: str
     affected_versions: List[str] = Field(default_factory=list)
     exploits: List[Dict[str, Any]] = Field(default_factory=list)
+    fixed_in: Optional[str] = None
 
 class MappingResult(BaseModel):
     component: Component
@@ -56,6 +57,9 @@ class BinaryAsset(BaseModel):
     version: Optional[str] = None
     vulnerabilities: List[Vulnerability] = Field(default_factory=list)
     risk: Optional[SbomRiskResult] = None
+    # New Reachability Fields
+    is_reachable: bool = False
+    memory_regions: List[Any] = Field(default_factory=list)
 
 class DaemonAsset(BaseModel):
     port: Optional[int]
@@ -71,6 +75,9 @@ class DaemonAsset(BaseModel):
     version: Optional[str] = None
     vulnerabilities: List[Vulnerability] = Field(default_factory=list)
     risk: Optional[SbomRiskResult] = None
+    # New Reachability Fields
+    is_reachable: bool = False
+    memory_regions: List[Any] = Field(default_factory=list)
 
 class FullSystemScanResult(BaseModel):
     kernel: KernelState

@@ -1,16 +1,7 @@
 import json
 import os
-from typing import Optional, Dict
-import requests
-from dotenv import load_dotenv
-from core.models import Component
-
-load_dotenv()
-
-import json
-import os
 import time
-from typing import Optional, Dict
+from typing import Optional, Dict, Tuple
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util import Retry
@@ -87,39 +78,15 @@ class CPEResolverPlugin:
         self.session.mount("https://", HTTPAdapter(max_retries=retries))
         self.session.mount("http://", HTTPAdapter(max_retries=retries))
 
-    def execute(self, component: Component) -> Component:
+    def resolve_with_metadata(self, name: str, version: str) -> Tuple[Optional[str], str, float]:
         """
-        Main entry point for the pipeline.
+        Resolves product and version to a CPE string and returns metadata about the resolution.
+        Returns (cpe, source, confidence).
         """
-        if not component.version:
-            return component
+        if not version:
+            return None, "Unknown", 0.0
 
-        # 1. Check Cache
-        cached_cpe = self.cache.get(component.name, component.version)
-        if cached_cpe:
-            component.cpe = cached_cpe
-            return component
-
-        # 2. Resolve via External APIs
-        cpe = self._resolve_cpe(component.name, component.version)
-
-        # 3. Update Cache & Component
-        if cpe:
-            self.cache.set(component.name, component.version, cpe)
-            component.cpe = cpe
-
-        return component
-
-    def _resolve_cpe(self, name: str, version: str) -> Optional[str]:
-        """
-        Resolves product and version to a CPE string using external APIs and local heuristics.
-        Returns None if the service is unknown or cannot be mapped.
-        """
-        # Block resolution for explicitly unknown services
-        if name.lower() in ['unknown', 'unknown service']:
-            return None
-
-        # 1. Heuristic Service Translation (General Nmap-to-CPE mapping)
+        # 1. Heuristic Service Translation
         service_map = {
             "ssh": ("openbsd", "openssh"),
             "mysql": ("mysql", "mysql"),
@@ -133,30 +100,61 @@ class CPEResolverPlugin:
             "redis": ("redis", "redis"),
             "mongodb": ("mongodb", "mongodb")
         }
-        
-        lookup_name = name
-        vendor = name
-        product = name
-        
-        # Check if the name is a known generic service
+
+        vendor, product = name, name
         for generic, (v, p) in service_map.items():
             if generic in name.lower():
-                vendor = v
-                product = p
+                vendor, product = v, p
                 break
-        
-        # 2. Try Shodan First
+
+        # 2. Try Shodan
         cpe = self._query_shodan(product, version)
         if cpe:
-            return cpe
+            return cpe, "Shodan", 0.8
 
-        # 3. Try Metasploit as Fallback
+        # 3. Try Metasploit
         cpe = self._query_metasploit(product, version)
         if cpe:
-            return cpe
+            return cpe, "Metasploit", 0.9
 
+<<<<<<< Updated upstream
         # 4. Final General Fallback: Force-generate a synthetic CPE if no API match is found
         return f"cpe:2.3:a:{vendor}:{product}:{version}:*:*:*:*:*:*:*"
+=======
+        # 4. Synthetic Fallback
+        if vendor and product and version:
+            return f"cpe:2.3:a:{vendor}:{product}:{version}:*:*:*:*:*:*:*", "Synthetic", 0.5
+
+        return None, "Unknown", 0.0
+
+    def execute(self, component: Component) -> Component:
+        """
+        Main entry point for the pipeline.
+        """
+        if not component.version:
+            return component
+
+        # 1. Check Cache
+        cached_cpe = self.cache.get(component.name, component.version)
+        if cached_cpe:
+            component.cpe = cached_cpe
+            return component
+
+        # 2. Resolve via External APIs with Metadata
+        cpe, source, confidence = self.resolve_with_metadata(component.name, component.version)
+
+        # 3. Update Cache & Component
+        if cpe:
+            self.cache.set(component.name, component.version, cpe)
+            component.cpe = cpe
+
+        return component
+
+    def _resolve_cpe(self, name: str, version: str) -> Optional[str]:
+        # Deprecated in favor of resolve_with_metadata, but kept for compatibility
+        cpe, _, _ = self.resolve_with_metadata(name, version)
+        return cpe
+>>>>>>> Stashed changes
 
     def _query_shodan(self, name: str, version: str) -> Optional[str]:
         api_key = self.api_keys.get("shodan")

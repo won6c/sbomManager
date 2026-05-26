@@ -20,3 +20,9 @@ Thumbs.db
 .omc/
 crypt_logs.py
 *.enc
+
+# Docker Testing
+Dockerfile.backend
+Dockerfile.frontend
+docker-compose.yml
+

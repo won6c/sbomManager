@@ -57,26 +57,76 @@ class NvdCveProviderPlugin:
         """
         Queries the NVD API for vulnerabilities matching the component's CPE.
         """
+        return self.execute_with_options(component, limit=10, offset=0)
+
+    def execute_with_options(
+        self,
+        component: Component,
+        limit: int = 10,
+        offset: int = 0,
+        min_severity: Optional[str] = None,
+        sort_by: str = "severity"
+    ) -> List[Vulnerability]:
+        """
+        Enhanced query method with pagination, filtering, and sorting.
+        """
         if not component.cpe:
             logger.warning(f"Component {component.name} has no CPE. Cannot query NVD.")
             return []
 
+<<<<<<< Updated upstream
+=======
+        # 1. Get all vulnerabilities for this CPE (Cached or API)
+        cached_data = self.storage.get(component.cpe)
+        if cached_data is not None:
+            all_vulns = [Vulnerability(**vuln) for vuln in cached_data]
+        else:
+            all_vulns = self._fetch_from_api(component)
+
+        if not all_vulns:
+            return []
+
+        # 2. Filtering by Severity
+        if min_severity:
+            severity_map = {"Unknown": 0, "LOW": 1, "MEDIUM": 2, "HIGH": 3, "CRITICAL": 4}
+            min_val = severity_map.get(min_severity.upper(), 0)
+            all_vulns = [v for v in all_vulns if severity_map.get(v.severity.upper(), 0) >= min_val]
+
+        # 3. Sorting
+        if sort_by == "severity":
+            severity_map = {"CRITICAL": 4, "HIGH": 3, "MEDIUM": 2, "LOW": 1, "Unknown": 0}
+            all_vulns.sort(key=lambda v: severity_map.get(v.severity.upper(), 0), reverse=True)
+        else:
+            all_vulns.sort(key=lambda v: v.cve_id)
+
+        # 4. Pagination
+        return all_vulns[offset : offset + limit]
+
+    def _fetch_from_api(self, component: Component) -> List[Vulnerability]:
+        """
+        Internal method to handle the actual NVD API call.
+        """
+>>>>>>> Stashed changes
         self._wait_for_rate_limit()
-        
         try:
             params = {"cpeName": component.cpe}
             response = self.session.get(
-                self.base_url, 
-                params=params, 
+                self.base_url,
+                params=params,
                 headers=self._get_headers(),
                 timeout=15
             )
-            
+
             if response.status_code == 404:
+<<<<<<< Updated upstream
+=======
+                self.storage.set(component.cpe, [])
+>>>>>>> Stashed changes
                 return []
-                
+
             response.raise_for_status()
             data = response.json()
+<<<<<<< Updated upstream
             
             vulnerabilities = []
             for item in data.get("vulnerabilities", []):
@@ -84,17 +134,34 @@ class NvdCveProviderPlugin:
                 cve_id = cve.get("id")
                 
                 # Extract description (English)
+=======
+
+            vulnerabilities_raw = []
+            vulnerabilities_objs = []
+
+            for item in data.get("vulnerabilities", []):
+                cve = item.get("cve", {})
+                cve_id = cve.get("id")
+
+>>>>>>> Stashed changes
                 descriptions = cve.get("descriptions", [])
                 description = next(
-                    (d.get("value") for d in descriptions if d.get("lang") == "en"), 
+                    (d.get("value") for d in descriptions if d.get("lang") == "en"),
                     "No description available."
                 )
+<<<<<<< Updated upstream
                 
                 # Extract severity from CVSS v3.1, v3.0, or v2
                 metrics = cve.get("metrics", {})
                 severity = "Unknown"
                 
                 # Try CVSS v3.1 first
+=======
+
+                metrics = cve.get("metrics", {})
+                severity = "Unknown"
+
+>>>>>>> Stashed changes
                 cvss_v31 = metrics.get("cvssMetricV31", [])
                 if cvss_v31:
                     severity = cvss_v31[0].get("cvssData", {}).get("baseSeverity", "Unknown")
@@ -114,6 +181,7 @@ class NvdCveProviderPlugin:
                                 elif severity >= 4.0: severity = "MEDIUM"
                                 else: severity = "LOW"
 
+<<<<<<< Updated upstream
                 vulnerabilities.append(Vulnerability(
                     cve_id=cve_id,
                     severity=severity,
@@ -122,6 +190,19 @@ class NvdCveProviderPlugin:
                 ))
                 
             return vulnerabilities
+=======
+                vuln_data = {
+                    "cve_id": cve_id,
+                    "severity": severity,
+                    "description": description,
+                    "affected_versions": [component.version] if component.version else []
+                }
+                vulnerabilities_raw.append(vuln_data)
+                vulnerabilities_objs.append(Vulnerability(**vuln_data))
+
+            self.storage.set(component.cpe, vulnerabilities_raw)
+            return vulnerabilities_objs
+>>>>>>> Stashed changes
 
         except requests.exceptions.RequestException as e:
             logger.error(f"Error querying NVD API for {component.cpe}: {e}")

@@ -26,7 +26,33 @@ class Vulnerability(BaseModel):
     affected_versions: List[str] = Field(default_factory=list)
     exploits: List[Dict[str, Any]] = Field(default_factory=list)
 
+class CPERequest(BaseModel):
+    name: str
+    version: str
+
+class CPEResponse(BaseModel):
+    name: str
+    version: str
+    cpe: str
+    source: str
+    confidence: float
+
+class CVERequest(BaseModel):
+    cpe: str
+    limit: int = 10
+    offset: int = 0
+    min_severity: Optional[str] = None
+    sort_by: str = "severity"
+
+class CVEResponse(BaseModel):
+    cpe: str
+    vulnerabilities: List[Vulnerability]
+    total_count: int
+    limit: int
+    offset: int
+
 class MappingResult(BaseModel):
+
     component: Component
     vulnerabilities: List[Vulnerability]
 

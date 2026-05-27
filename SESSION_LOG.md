@@ -93,10 +93,9 @@ Architecture Finalized: All CLAUDE.md files synchronized with risk-aware asset s
 
 ### Pending ToDo:
 - [ ] Implement Package Probe for high-precision versioning.
-- [ la l] Build Risk Visualizer dashboard for prioritized mitigation.
+- [ ] Build Risk Visualizer dashboard for prioritized mitigation.
 - [ ] Implement risk-based remediation guidance module.
 - [ ] Full NVD Mirroring for zero-API dependency.
-
 
 ## 2026-05-25: NVD API Caching Implementation
 - **Goal**: Mitigate NVD API rate limiting and reduce latency for repeated CVE lookups.
@@ -107,3 +106,22 @@ Architecture Finalized: All CLAUDE.md files synchronized with risk-aware asset s
     - Handled empty results (404) by caching them to prevent repeated useless API calls.
 - **Verification**: Developed `tests/verify_nvd_cache.py` and verified request duration dropped from ~5.6s to ~0.03s on cache hit.
 
+## 2026-05-27: Web UI Implementation and Log Recovery
+- **Log Recovery**:
+    - Restored root `progress.json` from the remote `k_d` baseline and appended the verified Web UI milestone instead of replacing the existing progress structure.
+    - Rebuilt root `SESSION_LOG.md` without the accidental line-number prefixes that had been written into the file body.
+- **Backend/API Support**:
+    - Confirmed `main.py` exposes `/health`, `/scan`, `/api/v1/intelligence/cpe`, `/api/v1/intelligence/cve`, `/intelligence/reachability`, `/intelligence/osv`, and `/intelligence/sbom/parse`.
+    - Fixed API v1 CPE/CVE endpoints to use the current plugin contracts (`execute()` plus endpoint-level paging/filtering) instead of non-existent helper methods.
+    - Added CORS support for the local Vite frontend and configured the Vite dev proxy for backend calls.
+- **Web UI**:
+    - Replaced the Vite starter screen with a usable SBOM Manager operations dashboard.
+    - Added typed API client and TypeScript models for scan results, assets, vulnerabilities, risk, and SBOM parsing.
+    - Implemented live scan execution, demo scan fallback, API health indicator, high-density asset filtering, asset detail view, CVE refresh action, reachability/risk indicators, attack path relation graph, and SBOM intake panel.
+- **Verification**:
+    - `npm run lint` passed for `web/frontend`.
+    - `npm run build` passed for `web/frontend`.
+    - `python -m py_compile main.py core/models.py core/collector.py plugins/packages/reachability.py plugins/packages/osv.py plugins/packages/parsers.py` passed.
+    - `python -m pytest tests/test_core_foundation.py tests/test_plugins_parser.py` passed with 7 tests.
+    - `curl http://127.0.0.1:8000/health`, Vite proxy `/health`, `/api/v1/intelligence/cpe`, `/intelligence/sbom/parse`, and a `/scan` smoke request returned valid responses.
+    - Live OSV verification remains network-dependent; the earlier sandboxed `verify_new_features.py` run timed out on `api.osv.dev`.

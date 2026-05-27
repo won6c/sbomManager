@@ -21,6 +21,7 @@ class CVEStorage:
         try:
             with sqlite3.connect(self.db_path) as conn:
                 cursor = conn.cursor()
+                # Table for CPE -> Vulnerabilities (NVD Cache)
                 cursor.execute("""
                     CREATE TABLE IF NOT EXISTS cpe_cache (
                         cpe TEXT PRIMARY KEY,
@@ -29,10 +30,48 @@ class CVEStorage:
                         hits INTEGER DEFAULT 0
                     )
                 """)
+                # Table for Name@Version -> CPE (CPE Resolver Cache)
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS cpe_mapping (
+                        key TEXT PRIMARY KEY,
+                        cpe TEXT,
+                        timestamp INTEGER
+                    )
+                """)
                 conn.commit()
         except sqlite3.Error as e:
             logger.error(f"Database initialization failed: {e}")
             raise
+
+    def get_cpe(self, name: str, version: str) -> Optional[str]:
+        """Retrieve a cached CPE for a given name and version."""
+        key = f"{name}@{version}"
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                cursor.execute("SELECT cpe, timestamp FROM cpe_mapping WHERE key = ?", (key,))
+                row = cursor.fetchone()
+                if row:
+                    cpe, timestamp = row
+                    if (time.time() - timestamp) < self.ttl_seconds:
+                        return cpe
+        except sqlite3.Error:
+            pass
+        return None
+
+    def set_cpe(self, name: str, version: str, cpe: str):
+        """Cache a CPE resolution for a name and version."""
+        key = f"{name}@{version}"
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    "INSERT OR REPLACE INTO cpe_mapping (key, cpe, timestamp) VALUES (?, ?, ?)",
+                    (key, cpe, int(time.time()))
+                )
+                conn.commit()
+        except sqlite3.Error as e:
+            logger.error(f"Error writing to CPE mapping: {e}")
 
     def get(self, cpe: str) -> Optional[List[Dict[str, Any]]]:
         """Retrieve vulnerabilities for a given CPE if the cache is not expired."""

@@ -17,9 +17,11 @@ async def test_scan():
             if response.status_code == 200:
                 data = response.json()
                 # Save result to file for manual inspection
-                with open("scan_result.json", "w", encoding="utf-8") as f:
+                os.makedirs("data/results", exist_ok=True)
+                output_path = "data/results/scan_result.json"
+                with open(output_path, "w", encoding="utf-8") as f:
                     json.dump(data, f, indent=4)
-                print("\n[+] Success! Result saved to 'scan_result.json'")
+                print(f"\n[+] Success! Result saved to '{output_path}'")
                 
                 daemons = data.get("daemons", [])
                 binaries = data.get("binaries", [])

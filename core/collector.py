@@ -21,6 +21,7 @@ from plugins.intelligence.cpe_resolver import CPEResolverPlugin
 from plugins.intelligence.nvd_cve_provider import NvdCveProviderPlugin
 from plugins.packages.osv import OSVCVEProvider
 from plugins.packages.reachability import ProcMapsReachabilityAnalyzer
+from plugins.packages.parsers import PackageResolver
 from core.risk_engine import RiskScoringEngine
 
 logger = logging.getLogger(__name__)
@@ -38,6 +39,7 @@ class SystemCollector:
         self.cpe_resolver = CPEResolverPlugin()
         self.nvd_provider = NvdCveProviderPlugin()
         self.osv_provider = OSVCVEProvider()
+        self.package_resolver = PackageResolver()
         self.reachability = ProcMapsReachabilityAnalyzer()
         self.risk_engine = RiskScoringEngine()
         
@@ -117,14 +119,29 @@ class SystemCollector:
                 asset.is_reachable = is_loaded
                 asset.memory_regions = regions
 
+            # OS Package Resolution (dpkg)
+            if asset.binary_path and asset.binary_path != "Unknown":
+                pkg_info = self.package_resolver.resolve_binary(asset.binary_path)
+                if pkg_info:
+                    if not asset.version or asset.version == "Unknown":
+                        asset.version = pkg_info["version"]
+                    if not asset.description or asset.description == "Unknown":
+                        asset.description = pkg_info["package"]
+
             # Intelligence Enrichment
             name = asset.description or (asset.binary_path.split('/')[-1] if asset.binary_path != "Unknown" else None)
             if name and asset.version:
-                comp = Component(name=name, version=asset.version)
+                # Sanitize name (nmap often adds '?' to uncertain services)
+                clean_name = name.rstrip('?')
+                comp = Component(name=clean_name, version=asset.version)
                 resolved = self.cpe_resolver.execute(comp)
                 asset.cpe = resolved.cpe
                 
-                purl = f"pkg:generic/{name}@{asset.version}" if asset.version else None
+                # Construct a valid PURL (Package URL)
+                from urllib.parse import quote
+                safe_name = quote(clean_name)
+                safe_version = quote(asset.version)
+                purl = f"pkg:generic/{safe_name}@{safe_version}"
                 asset.vulnerabilities = await self._enrich_asset_vulnerabilities(asset.cpe, purl)
             else:
                 asset.cpe = "Unknown"
@@ -151,14 +168,25 @@ class SystemCollector:
                 asset.is_reachable = is_loaded
                 asset.memory_regions = regions
 
+            # OS Package Resolution (dpkg)
+            if asset.path and asset.path != "Unknown":
+                pkg_info = self.package_resolver.resolve_binary(asset.path)
+                if pkg_info:
+                    if not asset.version or asset.version == "Unknown":
+                        asset.version = pkg_info["version"]
+
             # Intelligence Enrichment
             name = os.path.basename(asset.path) if asset.path != "Unknown" else None
             if name and asset.version:
-                comp = Component(name=name, version=asset.version)
+                clean_name = name.rstrip('?')
+                comp = Component(name=clean_name, version=asset.version)
                 resolved = self.cpe_resolver.execute(comp)
                 asset.cpe = resolved.cpe
                 
-                purl = f"pkg:generic/{name}@{asset.version}" if asset.version else None
+                from urllib.parse import quote
+                safe_name = quote(clean_name)
+                safe_version = quote(asset.version)
+                purl = f"pkg:generic/{safe_name}@{safe_version}"
                 asset.vulnerabilities = await self._enrich_asset_vulnerabilities(asset.cpe, purl)
             else:
                 asset.cpe = "Unknown"

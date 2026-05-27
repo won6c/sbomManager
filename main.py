@@ -1,13 +1,23 @@
-from fastapi import FastAPI, HTTPException, BackgroundTasks, Query
+from fastapi import FastAPI, HTTPException, BackgroundTasks, Query, Request
+from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
 from pathlib import Path
 import uvicorn
 import logging
+import traceback
+from datetime import datetime
 
 from core.collector import SystemCollector
-from core.models import Component, Vulnerability
+from core.models import (
+    Component,
+    CPERequest,
+    CPEResponse,
+    CVERequest,
+    CVEResponse
+)
 from plugins.intelligence.cpe_resolver import CPEResolverPlugin
 from plugins.intelligence.nvd_cve_provider import NvdCveProviderPlugin
 from plugins.packages.reachability import ProcMapsReachabilityAnalyzer
@@ -19,6 +29,16 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("api")
 
 app = FastAPI(title="SBOM Manager API")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Instance Management
 collector = SystemCollector()
@@ -31,6 +51,19 @@ cyclone_parser = CycloneDXParser()
 class ScanRequest(BaseModel):
     binary_scan_paths: List[str]
 
+# --- Global Exception Handler ---
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logger.error(f"Unhandled error: {traceback.format_exc()}")
+    return JSONResponse(
+        status_code=500,
+        content={
+            "error": "InternalServerError",
+            "message": str(exc),
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    )
+
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
@@ -41,31 +74,62 @@ async def run_scan(request: ScanRequest):
         result = await collector.collect(request.binary_scan_paths)
         return jsonable_encoder(result)
     except Exception as e:
-        import traceback
-        logger.error(f"Scan error: {traceback.format_exc()}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise e # Let global handler handle it
 
-# --- Intelligence Endpoints ---
+# --- API v1: Intelligence Endpoints ---
 
-@app.get("/intelligence/cpe")
-async def resolve_cpe(name: str = Query(...), version: str = Query(...)):
+@app.post("/api/v1/intelligence/cpe")
+async def resolve_cpe(req: CPERequest):
     try:
-        comp = Component(name=name, version=version)
+        comp = Component(name=req.name, version=req.version)
         resolved_comp = cpe_resolver.execute(comp)
         if not resolved_comp.cpe:
             raise HTTPException(status_code=404, detail="Could not resolve CPE.")
-        return {"name": name, "version": version, "cpe": resolved_comp.cpe}
+        return CPEResponse(
+            name=req.name,
+            version=req.version,
+            cpe=resolved_comp.cpe,
+            source="cache_or_heuristic",
+            confidence=0.75
+        )
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise e
 
-@app.get("/intelligence/cve")
-async def get_cves(cpe: str = Query(...)):
+@app.post("/api/v1/intelligence/cve")
+async def get_cves(req: CVERequest):
     try:
-        comp = Component(name="unknown", version="unknown", cpe=cpe)
-        vulnerabilities = nvd_provider.execute(comp)
-        return {"cpe": cpe, "vulnerabilities": jsonable_encoder(vulnerabilities), "count": len(vulnerabilities)}
+        comp = Component(name="unknown", version="unknown", cpe=req.cpe)
+        vulns = nvd_provider.execute(comp)
+        if req.min_severity:
+            severity_order = {"LOW": 1, "MEDIUM": 2, "HIGH": 3, "CRITICAL": 4}
+            min_rank = severity_order.get(req.min_severity.upper(), 0)
+            vulns = [
+                vuln for vuln in vulns
+                if severity_order.get(vuln.severity.upper(), 0) >= min_rank
+            ]
+        if req.sort_by == "severity":
+            severity_order = {"LOW": 1, "MEDIUM": 2, "HIGH": 3, "CRITICAL": 4}
+            vulns = sorted(
+                vulns,
+                key=lambda vuln: (
+                    severity_order.get(vuln.severity.upper(), 0),
+                    vuln.cvss_score or 0.0
+                ),
+                reverse=True
+            )
+        total_count = len(vulns)
+        paged_vulns = vulns[req.offset:req.offset + req.limit]
+        return CVEResponse(
+            cpe=req.cpe,
+            vulnerabilities=paged_vulns,
+            total_count=total_count,
+            limit=req.limit,
+            offset=req.offset
+        )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise e
 
 @app.post("/intelligence/cache/refresh")
 async def refresh_cache(background_tasks: BackgroundTasks, cpe: Optional[str] = Query(None)):
@@ -95,9 +159,6 @@ async def refresh_cache(background_tasks: BackgroundTasks, cpe: Optional[str] = 
 
 @app.get("/intelligence/reachability")
 async def check_reachability(path: str = Query(...)):
-    """
-    Check if a specific file path is currently loaded in any process's memory.
-    """
     is_loaded, regions = reachability_analyzer.check_memory_load(path)
     executable = reachability_analyzer.verify_executable_region(regions) if is_loaded else False
     return {
@@ -109,9 +170,6 @@ async def check_reachability(path: str = Query(...)):
 
 @app.get("/intelligence/osv")
 async def query_osv(purl: str = Query(...)):
-    """
-    Query OSV database for vulnerabilities using a PURL.
-    """
     try:
         vulns = await osv_provider.fetch_vulnerabilities(purl)
         return {
@@ -125,14 +183,10 @@ async def query_osv(purl: str = Query(...)):
 
 @app.post("/intelligence/sbom/parse")
 async def parse_sbom(file_path: str = Query(...)):
-    """
-    Parse a CycloneDX or SPDX SBOM file and return the package list.
-    """
     path = Path(file_path)
     if not path.exists():
         raise HTTPException(status_code=404, detail="SBOM file not found.")
     
-    # Currently supports CycloneDX JSON
     if path.suffix == ".json":
         parser = CycloneDXParser()
         results = parser.parse(path)

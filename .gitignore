@@ -20,3 +20,7 @@ Thumbs.db
 .omc/
 crypt_logs.py
 *.enc
+
+# Data & Caches
+data/results/
+data/intelligence_cache.db

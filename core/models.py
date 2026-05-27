@@ -35,6 +35,31 @@ class Vulnerability(BaseModel):
     exploits: List[Dict[str, Any]] = Field(default_factory=list)
     fixed_in: Optional[str] = None
 
+class CPERequest(BaseModel):
+    name: str
+    version: str
+
+class CPEResponse(BaseModel):
+    name: str
+    version: str
+    cpe: str
+    source: str
+    confidence: float
+
+class CVERequest(BaseModel):
+    cpe: str
+    limit: int = 10
+    offset: int = 0
+    min_severity: Optional[str] = None
+    sort_by: str = "severity"
+
+class CVEResponse(BaseModel):
+    cpe: str
+    vulnerabilities: List[Vulnerability]
+    total_count: int
+    limit: int
+    offset: int
+
 class MappingResult(BaseModel):
     component: Component
     vulnerabilities: List[Vulnerability]
@@ -57,7 +82,6 @@ class BinaryAsset(BaseModel):
     version: Optional[str] = None
     vulnerabilities: List[Vulnerability] = Field(default_factory=list)
     risk: Optional[SbomRiskResult] = None
-    # New Reachability Fields
     is_reachable: bool = False
     memory_regions: List[Any] = Field(default_factory=list)
 
@@ -75,7 +99,6 @@ class DaemonAsset(BaseModel):
     version: Optional[str] = None
     vulnerabilities: List[Vulnerability] = Field(default_factory=list)
     risk: Optional[SbomRiskResult] = None
-    # New Reachability Fields
     is_reachable: bool = False
     memory_regions: List[Any] = Field(default_factory=list)
 

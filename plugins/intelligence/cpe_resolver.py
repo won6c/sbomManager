@@ -1,14 +1,5 @@
 import json
 import os
-from typing import Optional, Dict
-import requests
-from dotenv import load_dotenv
-from core.models import Component
-
-load_dotenv()
-
-import json
-import os
 import time
 from typing import Optional, Dict
 import requests
@@ -16,51 +7,9 @@ from requests.adapters import HTTPAdapter
 from urllib3.util import Retry
 from dotenv import load_dotenv
 from core.models import Component
+from core.storage import CVEStorage
 
 load_dotenv()
-
-class CPECache:
-    """
-    File-based cache for CPE resolutions with TTL expiration to avoid API rate limits.
-    """
-    def __init__(self, cache_dir: str = "data/cpe_cache", ttl_days: int = 30):
-        self.cache_dir = cache_dir
-        self.ttl_seconds = ttl_days * 24 * 60 * 60
-        os.makedirs(self.cache_dir, exist_ok=True)
-
-    def _get_cache_path(self, key: str) -> str:
-        return os.path.join(self.cache_dir, f"{key}.json")
-
-    def get(self, name: str, version: str) -> Optional[str]:
-        key = f"{name}@{version}".replace(" ", "_").replace("/", "_")
-        path = self._get_cache_path(key)
-        if os.path.exists(path):
-            try:
-                with open(path, 'r') as f:
-                    data = json.load(f)
-
-                    # Check TTL expiration (default to current time if missing to avoid immediate expiry)
-                    timestamp = data.get("timestamp", time.time())
-                    if (time.time() - timestamp) < self.ttl_seconds:
-                        return data.get("cpe")
-
-                    # Cache expired
-                    return None
-            except (json.JSONDecodeError, IOError):
-                return None
-        return None
-
-    def set(self, name: str, version: str, cpe: str):
-        key = f"{name}@{version}".replace(" ", "_").replace("/", "_")
-        path = self._get_cache_path(key)
-        try:
-            with open(path, 'w') as f:
-                json.dump({
-                    "cpe": cpe,
-                    "timestamp": time.time()
-                }, f)
-        except IOError:
-            pass
 
 class CPEResolverPlugin:
     """
@@ -74,9 +23,9 @@ class CPEResolverPlugin:
             "metasploit": os.getenv("METASPLOIT_API_KEY")
         }
         self.ms_url = os.getenv("METASPLOIT_API_URL", "http://localhost:55552")
-        self.cache = CPECache()
+        self.storage = CVEStorage()
 
-        # Setup HTTP session with retry logic for rate limits (429) and transient errors (500, 502, 503, 504)
+        # Setup HTTP session with retry logic
         self.session = requests.Session()
         retries = Retry(
             total=3,
@@ -94,8 +43,8 @@ class CPEResolverPlugin:
         if not component.version:
             return component
 
-        # 1. Check Cache
-        cached_cpe = self.cache.get(component.name, component.version)
+        # 1. Check SQLite Storage
+        cached_cpe = self.storage.get_cpe(component.name, component.version)
         if cached_cpe:
             component.cpe = cached_cpe
             return component
@@ -103,9 +52,9 @@ class CPEResolverPlugin:
         # 2. Resolve via External APIs
         cpe = self._resolve_cpe(component.name, component.version)
 
-        # 3. Update Cache & Component
+        # 3. Update Storage & Component
         if cpe:
-            self.cache.set(component.name, component.version, cpe)
+            self.storage.set_cpe(component.name, component.version, cpe)
             component.cpe = cpe
 
         return component

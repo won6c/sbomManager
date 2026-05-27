@@ -18,9 +18,10 @@ Plugins must support the extended asset scope:
 - Session Log: `session_log.md`
 
 ## Tasks
-- [ ] Implement Mock SBOM Parser.
-- [ ] Implement Mock CVE Provider.
-- [ ] Implement Kernel version and build probe.
-- [ ] Implement Binary/Daemon discovery plugin.
-- [ ] Implement CycloneDX Parser.
-- [ ] Implement NVD API Provider.
+- [x] Implement Mock SBOM Parser.
+- [x] Implement Mock CVE Provider.
+- [x] Implement Kernel version and build probe.
+- [x] Implement Binary/Daemon discovery plugin.
+- [x] Implement CycloneDX Parser.
+- [x] Implement NVD API Provider.
+- [x] Implement CPE Resolver (Shodan/Metasploit integration with TTL Cache).

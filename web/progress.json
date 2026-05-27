@@ -1,1 +1,99 @@
-{}
+[
+  {
+    "phase": "Phase 0: Infrastructure",
+    "tasks": [
+      {
+        "id": "env-setup",
+        "task": "Set up React + Vite frontend workspace",
+        "status": "completed",
+        "updated": "2026-05-27"
+      },
+      {
+        "id": "api-client",
+        "task": "Implement typed API client for scan, CVE, health, and SBOM endpoints",
+        "status": "completed",
+        "updated": "2026-05-27"
+      },
+      {
+        "id": "proxy-cors",
+        "task": "Configure Vite proxy and FastAPI CORS for local frontend/backend integration",
+        "status": "completed",
+        "updated": "2026-05-27"
+      }
+    ]
+  },
+  {
+    "phase": "Phase 1: Core Dashboard",
+    "tasks": [
+      {
+        "id": "asset-table",
+        "task": "High-density asset table with risk, reachability, CVE, endpoint, and CPE columns",
+        "status": "completed",
+        "updated": "2026-05-27"
+      },
+      {
+        "id": "global-filters",
+        "task": "Category, severity, reachability, and search filters",
+        "status": "completed",
+        "updated": "2026-05-27"
+      },
+      {
+        "id": "scan-controls",
+        "task": "Live scan execution with demo data fallback",
+        "status": "completed",
+        "updated": "2026-05-27"
+      }
+    ]
+  },
+  {
+    "phase": "Phase 2: Intelligence Detail",
+    "tasks": [
+      {
+        "id": "asset-detail",
+        "task": "Asset detail panel with risk reason, CVE list, reachability, identity, and mitigation signals",
+        "status": "completed",
+        "updated": "2026-05-27"
+      },
+      {
+        "id": "cve-refresh",
+        "task": "Selected asset CVE refresh through /api/v1/intelligence/cve",
+        "status": "completed",
+        "updated": "2026-05-27"
+      }
+    ]
+  },
+  {
+    "phase": "Phase 3: Relation Graph and SBOM",
+    "tasks": [
+      {
+        "id": "attack-graph",
+        "task": "Attack path relation graph connecting port/local entry, process, binary, and CVE count",
+        "status": "completed",
+        "updated": "2026-05-27"
+      },
+      {
+        "id": "sbom-intake",
+        "task": "SBOM parser panel backed by /intelligence/sbom/parse",
+        "status": "completed",
+        "updated": "2026-05-27"
+      }
+    ]
+  },
+  {
+    "phase": "Validation",
+    "tasks": [
+      {
+        "id": "frontend-build",
+        "task": "Run lint and production build",
+        "status": "completed",
+        "updated": "2026-05-27"
+      },
+      {
+        "id": "backend-smoke",
+        "task": "Run Python compile, route import smoke check, and selected pytest suite",
+        "status": "completed",
+        "updated": "2026-05-27"
+      }
+    ]
+  }
+]

@@ -1,35 +1,43 @@
 {
-  "project_status": "Foundation Complete",
-  "current_phase": "Core Orchestration",
-  "completed_tasks": [
-    "Root Architecture Definition",
-    "Distributed Governance Setup",
-    "Core Module Implementation",
-    "Core Validation Suite",
-    "Detailed Asset Scope Specification",
-    "Tech Stack Finalization"
-  ],
-  "todo": [
-    "Implement Plugin Layer (Parsers & Providers)",
-    "Implement Data Persistence Layer",
-    "Develop FastAPI Backend",
-    "Build Elastic UI Dashboard",
-    "Integration Testing & Validation"
-  ],
-  "next_milestone": "Plugin Layer Implementation",
-  "last_updated": "2026-05-05",
-  "done": [
-    {
-      "id": "S-PROBE-001",
-      "date": "2026-05-05",
-      "action": "impl-kernel-probe",
-      "detail": "Implemented KernelProbe for version and security config extraction. Added keyword-based filtering for KASLR/SMEP/SMAP and graceful degradation for non-root users. Verified with tests/verify_kernel.py."
-    },
-    {
-      "id": "S-PROBE-002",
-      "date": "2026-05-05",
-      "action": "impl-daemon-probe",
-      "detail": "Implemented DaemonProbe with hybrid psutil/systemctl approach. Resolves listening ports to binaries via systemd inventory fallback when PIDs are restricted. Fixed binary path parsing bugs. Verified with tests/verify_daemons.py."
-    }
+  "core_orchestration": {
+    "status": "completed",
+    "features": ["Async SystemCollector", "Pydantic Model Standardization", "Parallel Probe Execution", "E2E Intelligence Chain Integration", "SOTP-Reachability Pipeline Integration"],
+    "last_updated": "2026-05-25"
+  },
+  "daemon_probe": {
+    "status": "completed",
+    "features": ["Port-based Deduplication", "Informative Priority Mapping"],
+    "last_updated": "2026-05-13"
+  },
+  "api_layer": {
+    "status": "completed",
+    "features": ["FastAPI /scan endpoint", "Dynamic Path Injection", "JSON Serialization", "Recursion Error Fix (jsonable_encoder)", "Granular Intelligence Endpoints (CPE, CVE, OSV, Reachability, SBOM)", "API v1 CPE/CVE request models", "API v1 compatibility with current plugin contracts", "Frontend CORS and Vite proxy support"],
+    "last_updated": "2026-05-27"
+  },
+  "intelligence_layer": {
+    "status": "completed",
+    "features": ["CPE Resolution Logic", "Synthetic CPE Fallback", "NVD API CVE Provider", "Core Pipeline Integration", "CVSS Score Extraction", "Local SQLite CVE Caching", "OSV Vulnerability Integration"],
+    "last_updated": "2026-05-25"
+  },
+  "risk_engine": {
+    "status": "completed",
+    "features": ["TARA-based Scoring Methodology", "Impact vs Feasibility Matrix", "Context-aware Asset Risk Analysis", "Reachability-Based Feasibility Weighting"],
+    "last_updated": "2026-05-25"
+  },
+  "web_ui": {
+    "status": "completed",
+    "features": ["React/Vite operations dashboard", "Typed FastAPI client", "Live scan and demo scan modes", "High-density asset inventory filters", "Asset detail panel with CVE refresh", "Reachability and risk signal visualization", "Attack path relation graph", "SBOM parser intake panel"],
+    "last_updated": "2026-05-27"
+  },
+  "project_structure": {
+    "status": "completed",
+    "features": ["Tests migration to tests/", "Module-based import fix", "Frontend workspace under web/frontend"],
+    "last_updated": "2026-05-27"
+  },
+  "future_todo": [
+    "Implement Package Probe for high-precision versioning",
+    "Implement risk-based remediation guidance module",
+    "Introduce local full-mirror NVD DB to completely remove API dependency",
+    "Replace demo sample data with persisted scan history and saved comparison views"
   ]
 }

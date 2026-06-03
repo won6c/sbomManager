@@ -39,8 +39,10 @@ User -> Frontend -> API -> Core Harness / SystemCollector
 │   ├── requirements/
 │   ├── threat-model/
 │   └── decisions/
-├── skills/                    # Project-local reusable workflows actually used by this repo
-│   └── tara/
+├── skills/                    # Project-local reusable workflows
+│   ├── final-presentation-builder/
+│   ├── sbom-manager-analysis/
+│   └── todo-tracking-reconciliation/
 ├── plans/                     # Active/completed implementation plans
 ├── tasks/                     # TODO/doing/done/progress tracking
 ├── scripts/                   # Repeatable build/test/verify commands
@@ -50,7 +52,7 @@ User -> Frontend -> API -> Core Harness / SystemCollector
 ├── memory/                    # Project context, lessons, local cache/runtime data
 └── src/                       # Runnable source code
     ├── main.py                # FastAPI entrypoint
-    ├── core/                  # Collector, models, storage, risk engine, pipeline
+    ├── core/                  # Collector, models, storage, risk engine, graph, pipeline
     ├── plugins/               # Kernel, binary, package, daemon, SBOM, intelligence probes
     ├── api/                   # API domain docs/progress
     └── web/frontend/          # React + Vite frontend

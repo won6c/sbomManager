@@ -1,0 +1,48 @@
+{
+  "domain": "evaluations",
+  "status": "completed",
+  "source_of_truth": "tasks/progress.json",
+  "last_updated": "2026-06-03",
+  "completed_tasks": [
+    {
+      "id": "EVAL-001",
+      "date": "2026-05-05",
+      "task": "Probe verification scripts",
+      "implementation": "Added targeted kernel and daemon verification scripts."
+    },
+    {
+      "id": "EVAL-002",
+      "date": "2026-05-11",
+      "task": "CPE/CVE flow tests",
+      "implementation": "Added end-to-end tests for Version -> CPE -> CVE mapping."
+    },
+    {
+      "id": "EVAL-003",
+      "date": "2026-05-20",
+      "task": "Risk/CVSS verification",
+      "implementation": "Added CVSS extraction and risk score verification scripts."
+    },
+    {
+      "id": "EVAL-004",
+      "date": "2026-05-25",
+      "task": "New intelligence feature verification",
+      "implementation": "Added tests for reachability, OSV, SBOM parsing, and cache behavior."
+    },
+    {
+      "id": "EVAL-005",
+      "date": "2026-06-03",
+      "task": "Active TODO coverage",
+      "implementation": "Added tests for package probe, remediation engine, and scan history."
+    },
+    {
+      "id": "EVAL-006",
+      "date": "2026-06-03",
+      "task": "Harness migration verification",
+      "implementation": "Moved tests to evaluations/benchmarks and configured pytest.ini testpaths."
+    }
+  ],
+  "active_tasks": [],
+  "verification": [
+    "./scripts/verify.sh -> 24 passed"
+  ]
+}

@@ -24,3 +24,6 @@ crypt_logs.py
 # Data & Caches
 data/results/
 data/intelligence_cache.db
+memory/data/results/
+memory/data/scan_history/
+memory/data/intelligence_cache.db

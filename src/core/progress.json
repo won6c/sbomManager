@@ -1,0 +1,59 @@
+{
+  "domain": "core",
+  "status": "completed",
+  "source_of_truth": "tasks/progress.json",
+  "last_updated": "2026-06-03",
+  "completed_tasks": [
+    {
+      "id": "CORE-001",
+      "date": "2026-05-05",
+      "task": "Core foundation",
+      "implementation": "Implemented base plugin abstractions, PluginManager, Pipeline, exception hierarchy, and public core exports."
+    },
+    {
+      "id": "CORE-002",
+      "date": "2026-05-13",
+      "task": "SystemCollector orchestration",
+      "implementation": "Added async SystemCollector with parallel Kernel, Daemon, Binary, and Package probe execution through ThreadPoolExecutor."
+    },
+    {
+      "id": "CORE-003",
+      "date": "2026-05-18",
+      "task": "Intelligence enrichment chain",
+      "implementation": "Integrated CPE resolution and NVD CVE provider into collected assets."
+    },
+    {
+      "id": "CORE-004",
+      "date": "2026-05-20",
+      "task": "TARA risk scoring",
+      "implementation": "Implemented Impact x Feasibility scoring using CVSS, exposure, privilege, mitigation, and exploit evidence."
+    },
+    {
+      "id": "CORE-005",
+      "date": "2026-05-25",
+      "task": "Reachability-aware pipeline",
+      "implementation": "Integrated /proc maps reachability and OSV enrichment so runtime-loaded components affect feasibility."
+    },
+    {
+      "id": "CORE-006",
+      "date": "2026-06-03",
+      "task": "Remediation and scan history",
+      "implementation": "Added RemediationEngine and filesystem-backed ScanHistoryStore under memory/data/scan_history."
+    },
+    {
+      "id": "CORE-007",
+      "date": "2026-06-03",
+      "task": "Harness layout migration",
+      "implementation": "Moved runnable source to src/ and updated pytest/pythonpath/scripts for the harness-engineering repository layout."
+    }
+  ],
+  "active_tasks": [],
+  "stale_candidates": [
+    "Older unchecked items in src/core/CLAUDE.md are historical; verify against this progress file and tasks/progress.json before treating them as active."
+  ],
+  "verification": [
+    "./scripts/build.sh passed.",
+    "./scripts/test.sh passed with 24 tests.",
+    "./scripts/verify.sh passed with 24 tests."
+  ]
+}

@@ -1,0 +1,824 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SBOM Manager Final Presentation</title>
+  <style>
+    :root {
+      --ink: #17202a;
+      --muted: #5d6d7e;
+      --line: #d6dbdf;
+      --paper: #ffffff;
+      --soft: #f4f6f7;
+      --accent: #0e7490;
+      --accent-2: #8a5a12;
+      --ok: #1f7a4d;
+      --warn: #9a3412;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: #e9edf0;
+      font-family: Arial, "Noto Sans KR", sans-serif;
+    }
+
+    .deck {
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+      padding: 28px;
+      align-items: center;
+    }
+
+    .slide {
+      position: relative;
+      width: min(1280px, calc(100vw - 56px));
+      aspect-ratio: 16 / 9;
+      background: var(--paper);
+      border: 1px solid var(--line);
+      box-shadow: 0 16px 36px rgba(23, 32, 42, 0.14);
+      padding: 44px 54px 42px;
+      overflow: hidden;
+    }
+
+    .slide::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 8px;
+      background: linear-gradient(90deg, var(--accent), #2f855a, var(--accent-2));
+    }
+
+    .slide-number {
+      position: absolute;
+      right: 32px;
+      bottom: 22px;
+      color: var(--muted);
+      font-size: 18px;
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin: 0;
+    }
+
+    h1 {
+      font-size: 52px;
+      line-height: 1.12;
+      letter-spacing: 0;
+    }
+
+    h2 {
+      font-size: 34px;
+      margin-bottom: 24px;
+      letter-spacing: 0;
+    }
+
+    h3 {
+      font-size: 22px;
+      margin-bottom: 12px;
+      color: var(--accent);
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      margin-top: 16px;
+      color: var(--muted);
+      font-size: 23px;
+      line-height: 1.45;
+      max-width: 940px;
+    }
+
+    .meta {
+      position: absolute;
+      left: 54px;
+      bottom: 42px;
+      color: var(--muted);
+      font-size: 18px;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 28px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 20px 22px;
+      background: #fbfcfc;
+    }
+
+    ul {
+      margin: 0;
+      padding-left: 22px;
+    }
+
+    li {
+      margin: 8px 0;
+      font-size: 19px;
+      line-height: 1.38;
+    }
+
+    .small li {
+      font-size: 17px;
+      margin: 6px 0;
+    }
+
+    .quote {
+      margin-top: 18px;
+      padding: 16px 20px;
+      border-left: 5px solid var(--accent);
+      background: var(--soft);
+      font-size: 20px;
+      line-height: 1.45;
+    }
+
+    .code,
+    pre {
+      font-family: Consolas, "Courier New", monospace;
+      background: #f7f9fa;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 16px;
+      font-size: 16px;
+      line-height: 1.35;
+      overflow: hidden;
+      white-space: pre;
+    }
+
+    .architecture {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 1fr;
+      gap: 14px;
+      align-items: center;
+      margin-top: 18px;
+    }
+
+    .node {
+      min-height: 76px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      background: #ffffff;
+    }
+
+    .node strong {
+      font-size: 18px;
+      margin-bottom: 4px;
+    }
+
+    .node span {
+      font-size: 15px;
+      color: var(--muted);
+      line-height: 1.3;
+    }
+
+    .arrow {
+      position: relative;
+    }
+
+    .arrow::after {
+      content: "→";
+      position: absolute;
+      right: -15px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--accent);
+      font-size: 28px;
+      font-weight: 700;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 17px;
+    }
+
+    th,
+    td {
+      border: 1px solid var(--line);
+      padding: 10px 12px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: #eef5f6;
+      color: #12343b;
+      font-weight: 700;
+    }
+
+    .tag-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .tag {
+      border: 1px solid #b7d8de;
+      color: #14505d;
+      background: #edf9fb;
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-size: 16px;
+    }
+
+    .evidence {
+      position: absolute;
+      left: 54px;
+      right: 54px;
+      bottom: 38px;
+      border-top: 1px solid var(--line);
+      padding-top: 12px;
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    .evidence strong {
+      color: var(--ink);
+    }
+
+    .compact {
+      font-size: 15px;
+      line-height: 1.28;
+    }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 10px;
+      margin-top: 22px;
+    }
+
+    .step {
+      min-height: 86px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      background: #fbfcfc;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      font-size: 17px;
+      line-height: 1.25;
+      position: relative;
+    }
+
+    .step:not(:last-child)::after {
+      content: "→";
+      position: absolute;
+      right: -15px;
+      color: var(--accent);
+      font-weight: 700;
+      font-size: 24px;
+    }
+
+    .doc-flow,
+    .agile-flow {
+      grid-template-columns: repeat(7, 1fr);
+      margin-top: 0;
+      margin-bottom: 20px;
+    }
+
+    .doc-flow .step,
+    .agile-flow .step {
+      min-height: 58px;
+      padding: 8px;
+      font-size: 14px;
+      line-height: 1.18;
+    }
+
+    .sprint-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+
+    .sprint-card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfcfc;
+      padding: 13px 14px;
+    }
+
+    .sprint-card h3 {
+      font-size: 19px;
+      margin-bottom: 7px;
+    }
+
+    .sprint-card strong {
+      display: block;
+      font-size: 14px;
+      color: var(--ink);
+      margin-top: 7px;
+      margin-bottom: 3px;
+    }
+
+    .sprint-card p,
+    .sprint-card li {
+      font-size: 13px;
+      line-height: 1.25;
+    }
+
+    .sprint-card ul {
+      padding-left: 17px;
+    }
+
+    .sprint-card li {
+      margin: 2px 0;
+    }
+
+    .practice-row {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .practice-row .panel {
+      padding: 10px 11px;
+    }
+
+    .practice-row h3 {
+      font-size: 15px;
+      margin-bottom: 5px;
+    }
+
+    .practice-row p {
+      font-size: 12px;
+      line-height: 1.25;
+      color: var(--muted);
+    }
+
+    .demo-grid {
+      display: grid;
+      grid-template-columns: 0.95fr 1.05fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    .screen {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #f8fafb;
+      overflow: hidden;
+    }
+
+    .bar {
+      height: 34px;
+      background: #dfe6e9;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 0 12px;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #9aa6ac;
+    }
+
+    .screen-body {
+      padding: 16px;
+    }
+
+    .endpoint {
+      border: 1px solid #b7d8de;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 10px;
+      background: #ffffff;
+      font-size: 17px;
+    }
+
+    .method {
+      display: inline-block;
+      min-width: 56px;
+      color: #ffffff;
+      background: var(--accent);
+      border-radius: 4px;
+      padding: 4px 8px;
+      margin-right: 8px;
+      font-weight: 700;
+      font-size: 14px;
+      text-align: center;
+    }
+
+    .method.post {
+      background: var(--ok);
+    }
+
+    .note {
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1.35;
+      margin-top: 10px;
+    }
+
+    @media print {
+      body {
+        background: #ffffff;
+      }
+
+      .deck {
+        padding: 0;
+        gap: 0;
+      }
+
+      .slide {
+        width: 100vw;
+        height: 100vh;
+        box-shadow: none;
+        border: 0;
+        page-break-after: always;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="deck">
+    <section class="slide">
+      <h1>SBOM Manager<br>Exploit Surface Analyzer</h1>
+      <p class="subtitle">SBOM, 실행 중인 서비스, 바이너리, 커널 상태, CVE 정보를 연결해 실제 공격 표면을 분석하는 Linux/Python 기반 시스템</p>
+      <div class="tag-row">
+        <span class="tag">FastAPI</span>
+        <span class="tag">Plugin Architecture</span>
+        <span class="tag">CPE / CVE Mapping</span>
+        <span class="tag">Kernel / Daemon / Binary Probe</span>
+      </div>
+      <p class="meta">Final Presentation · Repository / Documentation 중심</p>
+      <span class="slide-number">1 / 8</span>
+    </section>
+
+    <section class="slide">
+      <h2>Problem & Motivation</h2>
+      <div class="grid-2">
+        <div class="panel">
+          <h3>Problem</h3>
+          <ul>
+            <li>기존 SBOM은 패키지 목록 중심이라 실제 실행 환경과의 연결이 약함</li>
+            <li>커널, 데몬, 바이너리, CVE를 각각 확인해야 해 분석 누락 위험이 큼</li>
+            <li>취약점 존재 여부만으로는 실제 노출 위험도를 판단하기 어려움</li>
+          </ul>
+        </div>
+        <div class="panel">
+          <h3>Motivation</h3>
+          <ul>
+            <li>실행 중인 자산과 취약점 정보를 연결해 우선순위 판단 지원</li>
+            <li>반복 가능한 스캔과 표준 JSON 결과 제공</li>
+            <li>향후 SBOM upload, package probe, exploit intelligence 확장 기반 마련</li>
+          </ul>
+        </div>
+      </div>
+      <div class="quote">
+        As a security analyst, I want to map running services, binaries, kernel state, and vulnerabilities, so that I can prioritize real exploit surfaces.
+      </div>
+      <div class="evidence"><strong>Evidence:</strong> `plans/completed/sbom_manager_project_a5e19c8c.plan.md`, `evaluations/benchmarks/test_design.md`</div>
+    </section>
+
+    <section class="slide">
+      <h2>Project Overview & Goals</h2>
+      <div class="grid-2">
+        <div>
+          <h3>Major Features</h3>
+          <ul>
+            <li>FastAPI 기반 `/health`, `/scan` API</li>
+            <li>Kernel version 및 security config 수집</li>
+            <li>Listening daemon, port, exposure, user context 분석</li>
+            <li>ELF binary hash, permission, mitigation 분석</li>
+            <li>CPE resolution 및 CVE mapping</li>
+          </ul>
+        </div>
+        <div>
+          <h3>Goals</h3>
+          <ul>
+            <li>플러그인 기반으로 분석 기능 분리</li>
+            <li>Core collector가 probe를 비동기 실행</li>
+            <li>Pydantic 모델로 API 응답 표준화</li>
+            <li>권한 제한 상황에서도 graceful degradation 제공</li>
+          </ul>
+        </div>
+      </div>
+      <div class="architecture">
+        <div class="node arrow"><strong>User / Client</strong><span>Swagger UI, API client</span></div>
+        <div class="node arrow"><strong>FastAPI</strong><span>`src/main.py` `/scan`</span></div>
+        <div class="node arrow"><strong>SystemCollector</strong><span>async orchestration</span></div>
+        <div class="node"><strong>JSON Result</strong><span>kernel, daemons, binaries</span></div>
+      </div>
+      <div class="architecture">
+        <div class="node"><strong>KernelProbe</strong><span>version, config</span></div>
+        <div class="node"><strong>DaemonProbe</strong><span>ports, PIDs, exposure</span></div>
+        <div class="node"><strong>BinaryProbe</strong><span>ELF, hash, mitigation</span></div>
+        <div class="node"><strong>CPE / CVE</strong><span>intelligence enrichment</span></div>
+      </div>
+      <div class="evidence"><strong>Evidence:</strong> `src/main.py`, `src/core/collector.py`, `src/core/models.py`</div>
+    </section>
+
+    <section class="slide">
+      <h2>Repository Structure</h2>
+      <div class="grid-2">
+        <pre style="font-size:10px;line-height:1.12;">sbomManager/  # tree -L 3 -d, noise excluded
+├── docs/
+│   ├── architecture/ ├── decisions/
+│   ├── requirements/ └── threat-model/
+├── evaluations/
+│   ├── benchmarks/
+│   └── reports/slide/
+├── memory/
+│   └── data/{results,scan_history,test_cpe_cache}/
+├── plans/{active,completed}/
+├── scripts/
+├── skills/
+│   ├── final-presentation-builder/
+│   ├── sbom-manager-analysis/
+│   └── todo-tracking-reconciliation/
+├── src/
+│   ├── api/{core,routes}/
+│   ├── core/graph/
+│   ├── plugins/{binaries,daemons,intelligence,kernel,packages,sbom_parsers,third_party}/
+│   └── web/frontend/
+└── tasks/{doing,done,todo}/</pre>
+        <div>
+          <h3>Documents in the Tree</h3>
+          <ul>
+            <li>`AGENTS.md`, `CLAUDE.md`: root/domain operating rules</li>
+            <li>`progress.json`: active todo와 검증 상태의 machine-readable source</li>
+            <li>`SESSION_LOG.md`: sprint별 변경 이력과 회고 evidence</li>
+            <li>`design.md`, `IMPLEMENTATION.md`: architecture -> implementation trace</li>
+            <li>`skills/*/SKILL.md`: TARA 폴더 없이 실제 사용 skill 3개만 보존</li>
+          </ul>
+        </div>
+      </div>
+      <div class="evidence"><strong>Show:</strong> GitHub tree, `CLAUDE.md`, `tasks/progress.json`, `tasks/done/SESSION_LOG.md`, `src/core/IMPLEMENTATION.md`</div>
+    </section>
+
+    <section class="slide">
+      <h2>Documentation Process</h2>
+      <div class="flow doc-flow">
+        <div class="step">Backlog</div>
+        <div class="step">Requirement</div>
+        <div class="step">Design</div>
+        <div class="step">Implementation</div>
+        <div class="step">Testing</div>
+        <div class="step">Review</div>
+        <div class="step">Session<br>Log</div>
+      </div>
+      <div class="grid-3">
+        <div class="panel">
+          <h3>Requirements</h3>
+          <ul class="small">
+            <li>`sbom_manager_project_*.plan.md`</li>
+            <li>`src/plugins/kernel/design.md`</li>
+            <li>`src/plugins/daemons/design.md`</li>
+            <li>`src/plugins/binaries/design.md`</li>
+          </ul>
+        </div>
+        <div class="panel">
+          <h3>Design & Status</h3>
+          <ul class="small">
+            <li>`evaluations/benchmarks/test_design.md`</li>
+            <li>`src/core/IMPLEMENTATION.md`</li>
+            <li>module-level `CLAUDE.md`</li>
+            <li>module-level `progress.json`</li>
+          </ul>
+        </div>
+        <div class="panel">
+          <h3>Quality Tracking</h3>
+          <ul class="small">
+            <li>`tasks/done/SESSION_LOG.md`</li>
+            <li>resolved issue 기록</li>
+            <li>sprint review 결과 기록</li>
+            <li>test / verify scripts</li>
+          </ul>
+        </div>
+      </div>
+      <table style="margin-top: 18px;">
+        <tr><th>Date</th><th>Documentation Evidence</th><th>Development Result</th></tr>
+        <tr><td>2026-05-05</td><td>Daemon / Kernel session log</td><td>Probe 구현 및 검증</td></tr>
+        <tr><td>2026-05-11</td><td>CPE/CVE flow log</td><td>Version -> CPE -> CVE 연결</td></tr>
+        <tr><td>2026-05-13</td><td>Core orchestration log</td><td>Collector + FastAPI 구현</td></tr>
+        <tr><td>2026-05-18</td><td>Intelligence chain log</td><td>Asset discovery -> CVE mapping</td></tr>
+      </table>
+      <div class="evidence"><strong>Show:</strong> `tasks/done/SESSION_LOG.md`, `src/core/IMPLEMENTATION.md`, `src/plugins/*/design.md`</div>
+    </section>
+
+    <section class="slide">
+      <h2>Agile Development Process</h2>
+      <div class="flow agile-flow">
+        <div class="step">Project<br>Backlog</div>
+        <div class="step">Sprint<br>Planning</div>
+        <div class="step">Implementation</div>
+        <div class="step">Testing</div>
+        <div class="step">Sprint<br>Review</div>
+        <div class="step">Retrospective</div>
+        <div class="step">Next<br>Sprint</div>
+      </div>
+      <div class="sprint-grid">
+        <div class="sprint-card">
+          <h3>Sprint 1</h3>
+          <strong>Goal</strong>
+          <p>프로젝트 구조 및 요구사항 정의</p>
+          <strong>Deliverables</strong>
+          <ul>
+            <li>Problem Definition</li>
+            <li>Repository Structure</li>
+            <li>Core Architecture Design</li>
+            <li>Plugin Interface Design</li>
+          </ul>
+          <strong>Evidence</strong>
+          <ul>
+            <li>`plan.md`, `design.md`</li>
+            <li>architecture diagram</li>
+          </ul>
+        </div>
+        <div class="sprint-card">
+          <h3>Sprint 2</h3>
+          <strong>Goal</strong>
+          <p>핵심 기능 구현</p>
+          <strong>Deliverables</strong>
+          <ul>
+            <li>Kernel Probe</li>
+            <li>Daemon Probe</li>
+            <li>Binary Probe</li>
+            <li>Plugin Manager</li>
+            <li>Pipeline</li>
+          </ul>
+          <strong>Evidence</strong>
+          <ul>
+            <li>implementation commits</li>
+            <li>test files, session logs</li>
+          </ul>
+        </div>
+        <div class="sprint-card">
+          <h3>Sprint 3</h3>
+          <strong>Goal</strong>
+          <p>통합 및 검증</p>
+          <strong>Deliverables</strong>
+          <ul>
+            <li>System Collector</li>
+            <li>CPE/CVE Integration</li>
+            <li>FastAPI API</li>
+            <li>End-to-End Testing</li>
+          </ul>
+          <strong>Evidence</strong>
+          <ul>
+            <li>integration tests</li>
+            <li>demo screenshots</li>
+            <li>final session logs</li>
+          </ul>
+        </div>
+      </div>
+      <div class="practice-row">
+        <div class="panel">
+          <h3>Backlog Management</h3>
+          <p>Project Backlog에서 요구사항과 이슈를 관리하고 Sprint 범위를 선택</p>
+        </div>
+        <div class="panel">
+          <h3>Iterative Development</h3>
+          <p>설계, 핵심 기능 구현, 통합, 검증 순으로 기능을 반복적으로 추가</p>
+        </div>
+        <div class="panel">
+          <h3>Continuous Documentation</h3>
+          <p>각 Sprint 종료 시 Session Log, Design, Implementation 상태 갱신</p>
+        </div>
+        <div class="panel">
+          <h3>Continuous Testing</h3>
+          <p>기능 구현 직후 Unit Test와 Integration Test로 문제를 조기 발견</p>
+        </div>
+        <div class="panel">
+          <h3>Continuous Improvement</h3>
+          <p>Sprint Review와 Retrospective 결과를 다음 Sprint 계획에 반영</p>
+        </div>
+      </div>
+      <div class="evidence"><strong>Evidence:</strong> `tasks/done/SESSION_LOG.md`, `evaluations/benchmarks/test_core_integration.py`, `evaluations/benchmarks/test_cpe_cve_flow.py`, `evaluations/benchmarks/verify_api_recursion.py`</div>
+    </section>
+
+    <section class="slide">
+      <h2>Test & Evaluation</h2>
+      <div class="grid-2">
+        <div>
+          <h3>Testing Strategy</h3>
+          <ul>
+            <li>Unit: Pipeline, PluginManager, data model 검증</li>
+            <li>Integration: plugin -> pipeline -> mapping result 흐름 검증</li>
+            <li>Functional: `/health`, `/scan`, full system JSON 응답 확인</li>
+            <li>Environment: 권한 제한 상황에서 partial result 반환 확인</li>
+          </ul>
+        </div>
+        <div>
+          <h3>Validation</h3>
+          <ul>
+            <li>Linux system asset discovery 달성</li>
+            <li>CPE/CVE enrichment 연결</li>
+            <li>Plugin-based architecture 검증</li>
+            <li>Frontend UI와 package probe는 향후 확장 범위</li>
+          </ul>
+        </div>
+      </div>
+      <table style="margin-top: 22px;">
+        <tr><th>Test Case</th><th>Evidence</th><th>Result</th></tr>
+        <tr><td>Core pipeline integration</td><td>`evaluations/benchmarks/test_core_integration.py`</td><td>Pass</td></tr>
+        <tr><td>Daemon probe verification</td><td>`evaluations/benchmarks/verify_daemons.py`</td><td>Pass</td></tr>
+        <tr><td>Kernel probe verification</td><td>`evaluations/benchmarks/verify_kernel.py`</td><td>Pass</td></tr>
+        <tr><td>CPE/CVE flow</td><td>`evaluations/benchmarks/test_cpe_cve_flow.py`</td><td>Environment dependent</td></tr>
+        <tr><td>API JSON serialization</td><td>`evaluations/benchmarks/verify_api_recursion.py`</td><td>Pass</td></tr>
+      </table>
+      <div class="evidence"><strong>Show:</strong> test file list, selected test execution, `/health` and `/scan` response</div>
+    </section>
+
+    <section class="slide">
+      <h2>Demo Screens</h2>
+      <div class="demo-grid">
+        <div class="screen">
+          <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+          <div class="screen-body">
+            <div class="endpoint"><span class="method">GET</span>/health</div>
+            <div class="endpoint"><span class="method post">POST</span>/scan</div>
+            <pre class="compact">{
+  "binary_scan_paths": [
+    "/bin",
+    "/usr/bin"
+  ]
+}</pre>
+            <p class="note">Demo 화면은 `./scripts/launch.sh`로 React dashboard + FastAPI Swagger UI를 함께 사용한다.</p>
+          </div>
+        </div>
+        <div>
+          <h3>Workflow</h3>
+          <ul>
+            <li>사용자가 scan path를 입력하고 `/scan` 요청</li>
+            <li>Collector가 Kernel / Daemon / Binary probe를 병렬 실행</li>
+            <li>CPE Resolver와 CVE Provider가 결과를 enrich</li>
+            <li>`kernel`, `daemons`, `binaries`, `timestamp` JSON 반환</li>
+          </ul>
+          <pre class="compact" style="margin-top: 16px;">{
+  "kernel": { "version": "...", "is_root": false },
+  "daemons": [{ "port": 8000, "cpe": "...", "vulnerabilities": [] }],
+  "binaries": [{ "path": "/usr/bin/...", "sha256": "...", "mitigations": {} }],
+  "timestamp": "..."
+}</pre>
+        </div>
+      </div>
+      <div class="evidence"><strong>Capture:</strong> Swagger UI, `/scan` request body, JSON response, terminal test result</div>
+    </section>
+
+    <section class="slide">
+      <h2>Contributions / Challenges / Lessons Learned</h2>
+      <div class="grid-2">
+        <div>
+          <h3>Team Contributions</h3>
+          <table>
+            <tr><th>Member</th><th>Contribution</th></tr>
+            <tr><td>Member A</td><td>Core architecture, pipeline, Pydantic models</td></tr>
+            <tr><td>Member B</td><td>Kernel / Daemon / Binary probe implementation</td></tr>
+            <tr><td>Member C</td><td>CPE/CVE intelligence, testing, documentation</td></tr>
+          </table>
+          <p class="note">발표 전 실제 팀원 이름으로 교체</p>
+        </div>
+        <div>
+          <h3>Challenges</h3>
+          <ul class="small">
+            <li>Linux 권한 차이: `PRIVILEGE_RESTRICTED`로 graceful degradation 적용</li>
+            <li>외부 API 의존성: cache, retry, fallback CPE generation 적용</li>
+            <li>JSON serialization: Pydantic model과 `jsonable_encoder` 사용</li>
+            <li>환경별 결과 차이: mock test와 verify script 분리</li>
+          </ul>
+          <h3 style="margin-top: 16px;">Lessons Learned</h3>
+          <ul class="small">
+            <li>보안 도구는 데이터 연결 구조가 중요함</li>
+            <li>문서화는 개발 중 의사결정 기록으로 관리해야 함</li>
+            <li>플러그인 구조는 기능 확장과 테스트 분리에 효과적임</li>
+          </ul>
+        </div>
+      </div>
+      <div class="evidence"><strong>Evidence:</strong> `tasks/done/SESSION_LOG.md`, `src/core/models.py`, `src/core/collector.py`</div>
+    </section>
+  </main>
+</body>
+</html>

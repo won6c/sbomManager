@@ -1,0 +1,56 @@
+{
+  "domain": "api",
+  "status": "completed",
+  "source_of_truth": "tasks/progress.json",
+  "last_updated": "2026-06-03",
+  "completed_tasks": [
+    {
+      "id": "API-001",
+      "date": "2026-05-13",
+      "task": "Implement FastAPI entrypoint",
+      "implementation": "src/main.py exposes /health and /scan and delegates scan execution to SystemCollector."
+    },
+    {
+      "id": "API-002",
+      "date": "2026-05-20",
+      "task": "Stabilize scan serialization",
+      "implementation": "Resolved recursion errors by serializing Pydantic scan results with jsonable_encoder-compatible payloads."
+    },
+    {
+      "id": "API-003",
+      "date": "2026-05-25",
+      "task": "Expose granular intelligence endpoints",
+      "implementation": "Added CPE, CVE, reachability, OSV, and SBOM parsing endpoints for targeted analysis."
+    },
+    {
+      "id": "API-004",
+      "date": "2026-05-27",
+      "task": "Frontend integration support",
+      "implementation": "Added CORS and Vite proxy-compatible API behavior; fixed API v1 CPE/CVE contracts."
+    },
+    {
+      "id": "API-005",
+      "date": "2026-06-03",
+      "task": "Package and scan-history APIs",
+      "implementation": "Added /api/v1/packages/probe plus /api/v1/scans list/detail/compare endpoints."
+    }
+  ],
+  "active_tasks": [],
+  "deferred_tasks": [
+    {
+      "id": "API-AUTH-001",
+      "task": "API authentication/rate limiting",
+      "reason": "Not required for local harness/demo scope."
+    },
+    {
+      "id": "API-STATUS-001",
+      "task": "User-defined remediation status update endpoint",
+      "reason": "Status workflow is documented but not yet in current deliverable scope."
+    }
+  ],
+  "verification": [
+    "FastAPI TestClient smoke checks for /api/v1/packages/probe and /api/v1/scans returned HTTP 200.",
+    "PYTHONPATH=$PWD/src python import smoke reported app title 'SBOM Manager API' and 16 routes.",
+    "./scripts/verify.sh passed with 24 tests."
+  ]
+}

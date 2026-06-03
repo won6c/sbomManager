@@ -11,10 +11,10 @@ SBOM Manager is a security-oriented orchestration framework that turns passive S
 - Persists scan history and vulnerability cache data for repeat analysis.
 - Provides a FastAPI backend and a React/Vite frontend for interactive review.
 
-## Architecture
+## Harness architecture
 
 ```text
-User -> Frontend -> API -> Core Correlation Engine
+User -> Frontend -> API -> Core Harness / SystemCollector
                          -> Kernel Probe
                          -> Binary Probe
                          -> Package Probe
@@ -22,8 +22,9 @@ User -> Frontend -> API -> Core Correlation Engine
                          -> Intelligence Layer
                               -> CPE Resolver
                               -> CVE Providers
+                              -> Reachability Analyzer
                               -> Risk Scoring Engine
-                              -> Attack Path Insights
+                              -> Remediation Engine
                          -> Persistence
 ```
 
@@ -31,14 +32,28 @@ User -> Frontend -> API -> Core Correlation Engine
 
 ```text
 .
-├── main.py                 # FastAPI entrypoint
-├── core/                   # Collector, models, storage, risk engine, pipeline
-├── plugins/                # Kernel, binary, package, daemon, SBOM, intelligence probes
-├── tests/                  # Unit, integration, and verification scripts
-├── web/frontend/           # React + Vite frontend
-├── data/                   # Local cache/test data
-├── repo_skills/            # Project-local workflow skills
-└── slide/                  # Presentation materials
+├── AGENTS.md                  # Agent/project operating instructions
+├── README.md                  # Project overview and commands
+├── docs/                      # Architecture, requirements, threat model, decisions
+│   ├── architecture/
+│   ├── requirements/
+│   ├── threat-model/
+│   └── decisions/
+├── skills/                    # Project-local reusable workflows actually used by this repo
+│   └── tara/
+├── plans/                     # Active/completed implementation plans
+├── tasks/                     # TODO/doing/done/progress tracking
+├── scripts/                   # Repeatable build/test/verify commands
+├── evaluations/               # Benchmarks, verification tests, reports, slides
+│   ├── benchmarks/
+│   └── reports/
+├── memory/                    # Project context, lessons, local cache/runtime data
+└── src/                       # Runnable source code
+    ├── main.py                # FastAPI entrypoint
+    ├── core/                  # Collector, models, storage, risk engine, pipeline
+    ├── plugins/               # Kernel, binary, package, daemon, SBOM, intelligence probes
+    ├── api/                   # API domain docs/progress
+    └── web/frontend/          # React + Vite frontend
 ```
 
 ## Core principles
@@ -48,6 +63,27 @@ User -> Frontend -> API -> Core Correlation Engine
 - User-defined scope: binary scanning is path-limited to avoid system-wide lag.
 - Graceful degradation: non-root execution is supported and restricted findings are marked explicitly.
 
+## Full-stack launch
+
+Run backend and frontend together:
+
+```bash
+./scripts/launch.sh
+```
+
+Defaults:
+
+```text
+Backend:  http://127.0.0.1:8000
+Frontend: http://127.0.0.1:5173
+```
+
+Optional overrides:
+
+```bash
+BACKEND_PORT=8001 FRONTEND_PORT=5174 ./scripts/launch.sh
+```
+
 ## Backend quick start
 
 Requires Python 3.10+.
@@ -55,7 +91,8 @@ Requires Python 3.10+.
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-pip install fastapi uvicorn pydantic loguru requests python-dotenv pyelftools psutil networkx pytest
+pip install -r requirements.txt
+export PYTHONPATH="$PWD/src:${PYTHONPATH:-}"
 uvicorn main:app --reload --host 127.0.0.1 --port 8000
 ```
 
@@ -76,7 +113,7 @@ curl -X POST http://127.0.0.1:8000/scan \
 ## Frontend quick start
 
 ```bash
-cd web/frontend
+cd src/web/frontend
 npm install
 npm run dev
 ```
@@ -100,13 +137,15 @@ The frontend expects the API to be reachable from local development origins such
 | GET | `/api/v1/scans/{scan_id}` | Fetch a persisted scan result |
 | GET | `/api/v1/scans/compare/{base_scan_id}/{target_scan_id}` | Compare two persisted scans |
 
-## Testing
+## Testing and verification
 
 ```bash
-pytest tests
+./scripts/build.sh
+./scripts/test.sh
+./scripts/verify.sh
 ```
 
-Targeted verification scripts are also available under `tests/verify_*.py` for probing individual components such as kernel, daemons, binaries, CPE resolution, CVSS extraction, and scan results.
+Targeted verification scripts are under `evaluations/benchmarks/verify_*.py` for probing individual components such as kernel, daemons, binaries, CPE resolution, CVSS extraction, and scan results.
 
 ## Risk model
 
@@ -123,4 +162,4 @@ This aligns with the project TARA direction: risk is treated as `Impact x Feasib
 - Some probes return richer data when run with elevated privileges.
 - Restricted fields should degrade to explicit privilege-restricted states rather than failing the full scan.
 - Binary scanning should remain scoped to user-provided paths.
-- Local cache and generated scan data should not be treated as authoritative security evidence without verification.
+- Local cache and generated scan data under `memory/data/` should not be treated as authoritative security evidence without verification.

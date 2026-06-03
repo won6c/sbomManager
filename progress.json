@@ -1,43 +1,171 @@
 {
   "core_orchestration": {
     "status": "completed",
-    "features": ["Async SystemCollector", "Pydantic Model Standardization", "Parallel Probe Execution", "E2E Intelligence Chain Integration", "SOTP-Reachability Pipeline Integration"],
+    "features": [
+      "Async SystemCollector",
+      "Pydantic Model Standardization",
+      "Parallel Probe Execution",
+      "E2E Intelligence Chain Integration",
+      "SOTP-Reachability Pipeline Integration"
+    ],
     "last_updated": "2026-05-25"
   },
   "daemon_probe": {
     "status": "completed",
-    "features": ["Port-based Deduplication", "Informative Priority Mapping"],
+    "features": [
+      "Port-based Deduplication",
+      "Informative Priority Mapping"
+    ],
     "last_updated": "2026-05-13"
   },
   "api_layer": {
     "status": "completed",
-    "features": ["FastAPI /scan endpoint", "Dynamic Path Injection", "JSON Serialization", "Recursion Error Fix (jsonable_encoder)", "Granular Intelligence Endpoints (CPE, CVE, OSV, Reachability, SBOM)", "API v1 CPE/CVE request models", "API v1 compatibility with current plugin contracts", "Frontend CORS and Vite proxy support"],
+    "features": [
+      "FastAPI /scan endpoint",
+      "Dynamic Path Injection",
+      "JSON Serialization",
+      "Recursion Error Fix (jsonable_encoder)",
+      "Granular Intelligence Endpoints (CPE, CVE, OSV, Reachability, SBOM)",
+      "API v1 CPE/CVE request models",
+      "API v1 compatibility with current plugin contracts",
+      "Frontend CORS and Vite proxy support"
+    ],
     "last_updated": "2026-05-27"
   },
   "intelligence_layer": {
     "status": "completed",
-    "features": ["CPE Resolution Logic", "Synthetic CPE Fallback", "NVD API CVE Provider", "Core Pipeline Integration", "CVSS Score Extraction", "Local SQLite CVE Caching", "OSV Vulnerability Integration"],
+    "features": [
+      "CPE Resolution Logic",
+      "Synthetic CPE Fallback",
+      "NVD API CVE Provider",
+      "Core Pipeline Integration",
+      "CVSS Score Extraction",
+      "Local SQLite CVE Caching",
+      "OSV Vulnerability Integration"
+    ],
     "last_updated": "2026-05-25"
   },
   "risk_engine": {
     "status": "completed",
-    "features": ["TARA-based Scoring Methodology", "Impact vs Feasibility Matrix", "Context-aware Asset Risk Analysis", "Reachability-Based Feasibility Weighting"],
+    "features": [
+      "TARA-based Scoring Methodology",
+      "Impact vs Feasibility Matrix",
+      "Context-aware Asset Risk Analysis",
+      "Reachability-Based Feasibility Weighting"
+    ],
     "last_updated": "2026-05-25"
   },
   "web_ui": {
     "status": "completed",
-    "features": ["React/Vite operations dashboard", "Typed FastAPI client", "Live scan and demo scan modes", "High-density asset inventory filters", "Asset detail panel with CVE refresh", "Reachability and risk signal visualization", "Attack path relation graph", "SBOM parser intake panel"],
+    "features": [
+      "React/Vite operations dashboard",
+      "Typed FastAPI client",
+      "Live scan and demo scan modes",
+      "High-density asset inventory filters",
+      "Asset detail panel with CVE refresh",
+      "Reachability and risk signal visualization",
+      "Attack path relation graph",
+      "SBOM parser intake panel"
+    ],
     "last_updated": "2026-05-27"
   },
   "project_structure": {
     "status": "completed",
-    "features": ["Tests migration to tests/", "Module-based import fix", "Frontend workspace under web/frontend"],
+    "features": [
+      "Tests migration to tests/",
+      "Module-based import fix",
+      "Frontend workspace under web/frontend"
+    ],
     "last_updated": "2026-05-27"
   },
   "future_todo": [
-    "Implement Package Probe for high-precision versioning",
-    "Implement risk-based remediation guidance module",
-    "Introduce local full-mirror NVD DB to completely remove API dependency",
-    "Replace demo sample data with persisted scan history and saved comparison views"
+    "Build Risk Visualizer dashboard for prioritized mitigation",
+    "Introduce local full-mirror NVD DB for zero API dependency"
+  ],
+  "active_todo": [
+    {
+      "id": "TODO-PKG-001",
+      "title": "Implement Package Probe for high-precision versioning",
+      "status": "completed",
+      "priority": "P0",
+      "area": "plugins/packages",
+      "source": [
+        "progress.json:future_todo",
+        "SESSION_LOG.md:Pending ToDo"
+      ],
+      "current_state": "Partial support exists via PackageResolver(dpkg) and CycloneDXParser, but no full package probe or multi-ecosystem high-precision version collector is tracked as completed.",
+      "next_step": "Define PackageAsset/PackageProbe contract, collect dpkg/rpm/pip/npm metadata with exact version/source/path, and add pytest/API smoke coverage.",
+      "last_updated": "2026-06-03",
+      "implementation": "Added PackageAsset model, PackageProbe for dpkg and Python dist-info metadata, package scan API, and tests."
+    },
+    {
+      "id": "TODO-REMED-001",
+      "title": "Implement risk-based remediation guidance module",
+      "status": "completed",
+      "priority": "P1",
+      "area": "core/api/web",
+      "source": [
+        "progress.json:future_todo",
+        "SESSION_LOG.md:Pending ToDo"
+      ],
+      "current_state": "Risk scores are produced, but recommended remediation actions/status workflow are not implemented as a module.",
+      "next_step": "Generate remediation hints from risk factors, mitigation gaps, exposure, and package/CVE metadata; expose via API and render in asset detail.",
+      "last_updated": "2026-06-03",
+      "implementation": "Added RemediationRecommendation model and RemediationEngine that derives P0/P1/P2 actions from daemon, binary, and package risk evidence."
+    },
+    {
+      "id": "TODO-HISTORY-001",
+      "title": "Replace demo sample data with persisted scan history and saved comparison views",
+      "status": "completed",
+      "priority": "P2",
+      "area": "data/api/web",
+      "source": [
+        "progress.json:future_todo"
+      ],
+      "current_state": "Frontend supports demo fallback/live scan, but saved scan history and comparison views are not tracked as completed.",
+      "next_step": "Persist scan runs, expose list/detail/compare endpoints, and add UI for historical comparison.",
+      "last_updated": "2026-06-03",
+      "implementation": "Added filesystem-backed ScanHistoryStore plus list/get/compare API endpoints and tests."
+    }
+  ],
+  "todo_tracking": {
+    "last_reviewed": "2026-06-03",
+    "source_of_truth": "progress.json:active_todo",
+    "notes": [
+      "Scope narrowed to the three core items: package identity, remediation guidance, and persisted scan history/comparison. Risk Visualizer and full NVD mirror were deferred.",
+      "SESSION_LOG.md pending items were reconciled into active_todo.",
+      "Several CLAUDE.md and older plan TODO checklists appear stale relative to completed root progress and should be reconciled before being treated as active scope."
+    ]
+  },
+  "deferred_todo": [
+    {
+      "id": "TODO-RISK-UI-001",
+      "title": "Build Risk Visualizer dashboard for prioritized mitigation",
+      "status": "deferred",
+      "priority": "P1",
+      "area": "web/frontend",
+      "source": [
+        "SESSION_LOG.md:Pending ToDo"
+      ],
+      "current_state": "Current Web UI has risk/reachability indicators and attack path graph, but no dedicated prioritized mitigation visualizer is tracked.",
+      "next_step": "Add dashboard view that sorts assets by TARA risk, exposure, CVE count, reachability, and mitigation gaps.",
+      "defer_reason": "Explicitly deferred after scope review; useful later but not required for current core deliverable.",
+      "last_updated": "2026-06-03"
+    },
+    {
+      "id": "TODO-NVD-001",
+      "title": "Introduce local full-mirror NVD DB for zero API dependency",
+      "status": "deferred",
+      "priority": "P2",
+      "area": "intelligence/data",
+      "source": [
+        "progress.json:future_todo",
+        "SESSION_LOG.md:Pending ToDo"
+      ],
+      "current_state": "SQLite/file caching exists for NVD lookups, but it is not a full local NVD mirror.",
+      "next_step": "Design NVD feed sync/import job, normalized schema, incremental update strategy, and provider fallback order.",
+      "defer_reason": "Explicitly deferred after scope review; useful later but not required for current core deliverable.",
+      "last_updated": "2026-06-03"
+    }
   ]
 }

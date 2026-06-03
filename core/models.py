@@ -64,6 +64,34 @@ class MappingResult(BaseModel):
     component: Component
     vulnerabilities: List[Vulnerability]
 
+
+class PackageAsset(BaseModel):
+    name: str
+    version: Optional[str] = None
+    ecosystem: str = "unknown"
+    package_manager: str = "unknown"
+    source: str = "unknown"
+    path: Optional[str] = None
+    purl: Optional[str] = None
+    cpe: Optional[str] = None
+    vendor: Optional[str] = None
+    license: Optional[str] = None
+    is_runtime_reachable: bool = False
+    linked_paths: List[str] = Field(default_factory=list)
+    vulnerabilities: List[Vulnerability] = Field(default_factory=list)
+    risk: Optional[SbomRiskResult] = None
+    other_metadata: Dict[str, Any] = Field(default_factory=dict)
+
+class RemediationRecommendation(BaseModel):
+    recommendation_id: str
+    target_type: str
+    target: str
+    priority: str
+    action: str
+    rationale: str
+    evidence: List[str] = Field(default_factory=list)
+    status: str = "Open"
+
 class KernelState(BaseModel):
     version: str
     config: Dict[str, str]
@@ -106,6 +134,9 @@ class FullSystemScanResult(BaseModel):
     kernel: KernelState
     daemons: List[DaemonAsset]
     binaries: List[BinaryAsset]
+    packages: List[PackageAsset] = Field(default_factory=list)
+    remediation: List[RemediationRecommendation] = Field(default_factory=list)
+    scan_id: Optional[str] = None
     overall_risk_score: float = 0.0
     overall_risk_level: str = "Low"
     timestamp: str

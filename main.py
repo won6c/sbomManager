@@ -11,6 +11,7 @@ import traceback
 from datetime import datetime
 
 from core.collector import SystemCollector
+from core.scan_history import ScanHistoryStore
 from core.models import (
     Component,
     CPERequest,
@@ -23,6 +24,7 @@ from plugins.intelligence.nvd_cve_provider import NvdCveProviderPlugin
 from plugins.packages.reachability import ProcMapsReachabilityAnalyzer
 from plugins.packages.osv import OSVCVEProvider
 from plugins.packages.parsers import CycloneDXParser
+from plugins.packages.probe import PackageProbe
 
 # Setup Logging
 logging.basicConfig(level=logging.INFO)
@@ -47,9 +49,16 @@ nvd_provider = NvdCveProviderPlugin()
 reachability_analyzer = ProcMapsReachabilityAnalyzer()
 osv_provider = OSVCVEProvider()
 cyclone_parser = CycloneDXParser()
+package_probe = PackageProbe()
+scan_history = ScanHistoryStore()
 
 class ScanRequest(BaseModel):
     binary_scan_paths: List[str]
+    persist: bool = True
+
+class PackageProbeRequest(BaseModel):
+    scan_paths: List[str] = []
+    limit: Optional[int] = 100
 
 # --- Global Exception Handler ---
 @app.exception_handler(Exception)
@@ -72,6 +81,8 @@ async def health_check():
 async def run_scan(request: ScanRequest):
     try:
         result = await collector.collect(request.binary_scan_paths)
+        if request.persist:
+            scan_history.save(result)
         return jsonable_encoder(result)
     except Exception as e:
         raise e # Let global handler handle it
@@ -193,6 +204,29 @@ async def parse_sbom(file_path: str = Query(...)):
         return {"format": "CycloneDX", "packages": results}
     else:
         raise HTTPException(status_code=400, detail="Unsupported SBOM format. Use .json for CycloneDX.")
+
+@app.post("/api/v1/packages/probe")
+async def probe_packages(req: PackageProbeRequest):
+    packages = package_probe.execute(req.scan_paths, limit=req.limit)
+    return {"packages": jsonable_encoder(packages), "count": len(packages)}
+
+@app.get("/api/v1/scans")
+async def list_scans():
+    return {"scans": scan_history.list()}
+
+@app.get("/api/v1/scans/{scan_id}")
+async def get_scan(scan_id: str):
+    scan = scan_history.get(scan_id)
+    if scan is None:
+        raise HTTPException(status_code=404, detail="Scan not found.")
+    return scan
+
+@app.get("/api/v1/scans/compare/{base_scan_id}/{target_scan_id}")
+async def compare_scans(base_scan_id: str, target_scan_id: str):
+    comparison = scan_history.compare(base_scan_id, target_scan_id)
+    if comparison is None:
+        raise HTTPException(status_code=404, detail="One or both scans were not found.")
+    return comparison
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

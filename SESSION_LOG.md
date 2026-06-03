@@ -125,3 +125,46 @@ Architecture Finalized: All CLAUDE.md files synchronized with risk-aware asset s
     - `python -m pytest tests/test_core_foundation.py tests/test_plugins_parser.py` passed with 7 tests.
     - `curl http://127.0.0.1:8000/health`, Vite proxy `/health`, `/api/v1/intelligence/cpe`, `/intelligence/sbom/parse`, and a `/scan` smoke request returned valid responses.
     - Live OSV verification remains network-dependent; the earlier sandboxed `verify_new_features.py` run timed out on `api.osv.dev`.
+
+## 2026-06-03: Active TODO Reconciliation
+- **Goal**: Reconcile remaining TODOs into a single trackable source of truth.
+- **Updates**:
+    - Added structured `active_todo` entries to root `progress.json` with IDs, priority, area, current state, source, and next step.
+    - Created `TODO_TRACKING.md` as the human-readable tracking view mirrored from `progress.json.active_todo`.
+    - Preserved the root `future_todo` list as a compatibility summary derived from the active TODO titles.
+- **Active TODO IDs**:
+    - `TODO-PKG-001`: Package Probe high-precision versioning.
+    - `TODO-RISK-UI-001`: Risk Visualizer dashboard.
+    - `TODO-REMED-001`: Risk-based remediation guidance module.
+    - `TODO-NVD-001`: Local full-mirror NVD DB.
+    - `TODO-HISTORY-001`: Persisted scan history and saved comparison views.
+- **Stale Tracking Note**: Older unchecked items in `core/CLAUDE.md`, `api/CLAUDE.md`, `plugins/*/CLAUDE.md`, `tests/CLAUDE.md`, `plugins/progress.json`, and the initial `.plan.md` file were identified as stale candidates and should not be treated as active scope until revalidated.
+
+## 2026-06-03: Core Active TODO Implementation
+- **Scope Decision**: Implemented the three core TODOs and deferred the two lower-priority enhancements.
+- **Implemented**:
+    - `TODO-PKG-001`: Added `PackageAsset`, `PackageProbe` for dpkg and Python dist-info metadata, `/api/v1/packages/probe`, and unit coverage.
+    - `TODO-REMED-001`: Added `RemediationRecommendation` and `RemediationEngine` to convert risk/exposure/mitigation evidence into P0/P1/P2 remediation actions.
+    - `TODO-HISTORY-001`: Added `ScanHistoryStore`, persisted `/scan` results, scan list/detail endpoints, scan comparison endpoint, and unit coverage.
+- **Deferred**:
+    - `TODO-RISK-UI-001`: Dedicated Risk Visualizer dashboard; existing UI already contains risk/reachability/graph views.
+    - `TODO-NVD-001`: Full NVD mirror; existing caching is sufficient for current scope.
+- **Repo Skills**: Added `repo_skills/` with reusable project-building skills for SBOM analysis, TODO reconciliation, and final presentation construction.
+- **Verification**:
+    - `python -m pytest tests/test_active_todo_features.py -q` passed with 3 tests.
+    - `python -m py_compile core/models.py core/collector.py core/remediation.py core/scan_history.py plugins/packages/probe.py main.py` passed.
+    - FastAPI TestClient smoke checks for `/api/v1/packages/probe` and `/api/v1/scans` returned HTTP 200.
+
+## 2026-06-03: Final Presentation Deck
+- **Deliverable**: Created updated final presentation assets under `slide/`.
+    - `slide/final_presentation_0603_updated.html`: source slide deck.
+    - `slide/final_presentation_0603_updated.pdf`: PDF export for submission.
+- **Structure**: 10 total slides: 1 cover, 8 final-report slides, 1 closing slide with GitHub repository URL.
+- **Rubric Coverage**:
+    - User story, problem/motivation, project overview/goals.
+    - Harness engineering repository structure and maintained project documents.
+    - Architecture, implementation highlights, test/evaluation evidence, demo screens, contributions, challenges, and lessons learned.
+- **Verification**:
+    - `pdfinfo slide/final_presentation_0603_updated.pdf` reported `Pages: 10`.
+    - Visual contact-sheet QA checked all 10 slides for obvious overflow/cutoff issues.
+    - Combined verification passed: `python -m json.tool progress.json`, selected pytest suite, py_compile checks, and PDF page count.

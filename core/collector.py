@@ -22,7 +22,9 @@ from plugins.intelligence.nvd_cve_provider import NvdCveProviderPlugin
 from plugins.packages.osv import OSVCVEProvider
 from plugins.packages.reachability import ProcMapsReachabilityAnalyzer
 from plugins.packages.parsers import PackageResolver
+from plugins.packages.probe import PackageProbe
 from core.risk_engine import RiskScoringEngine
+from core.remediation import RemediationEngine
 
 logger = logging.getLogger(__name__)
 
@@ -40,8 +42,10 @@ class SystemCollector:
         self.nvd_provider = NvdCveProviderPlugin()
         self.osv_provider = OSVCVEProvider()
         self.package_resolver = PackageResolver()
+        self.package_probe = PackageProbe()
         self.reachability = ProcMapsReachabilityAnalyzer()
         self.risk_engine = RiskScoringEngine()
+        self.remediation_engine = RemediationEngine()
         
         self.executor = ThreadPoolExecutor(max_workers=5)
 
@@ -86,9 +90,10 @@ class SystemCollector:
         tasks = [
             loop.run_in_executor(self.executor, self.kernel_probe.probe),
             loop.run_in_executor(self.executor, self.daemon_probe.probe),
-            loop.run_in_executor(self.executor, lambda: self.binary_probe.execute({"scan_paths": binary_scan_paths}))
+            loop.run_in_executor(self.executor, lambda: self.binary_probe.execute({"scan_paths": binary_scan_paths})),
+            loop.run_in_executor(self.executor, lambda: self.package_probe.execute(binary_scan_paths, limit=250))
         ]
-        kernel_raw, daemons_raw, binaries_raw = await asyncio.gather(*tasks)
+        kernel_raw, daemons_raw, binaries_raw, packages_assets = await asyncio.gather(*tasks)
 
         # Process Kernel
         kernel_state = KernelState(
@@ -197,8 +202,11 @@ class SystemCollector:
             kernel=kernel_state,
             daemons=daemons_assets,
             binaries=binaries_assets,
+            packages=packages_assets,
             timestamp=datetime.now().isoformat()
         )
         
         # Calculate Risk Scores (Now aware of Reachability)
-        return self.risk_engine.analyze_system(scan_result)
+        analyzed = self.risk_engine.analyze_system(scan_result)
+        analyzed.remediation = self.remediation_engine.recommend(analyzed)
+        return analyzed
